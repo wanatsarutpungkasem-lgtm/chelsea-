@@ -44,7 +44,7 @@ export function parseFootballQuestion(text, now = new Date()) {
   }
   if (!teams.length) {
     const englishName = q.replace(/\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\/\d{1,2}\/\d{4}\b/g, '')
-      .replace(/[^a-zA-Z .'-]/g, ' ').replace(/\b(?:when|does|do|play|plays|next|match|matches|fixture|fixtures|football|soccer|today|tonight|tomorrow|yesterday|live|score|finished|completed|upcoming|scheduled|prediction|predict|percent)\b/gi, '').trim();
+      .replace(/[^a-zA-Z .'-]/g, ' ').replace(/\bline[ -]?ups?\b|\b(?:when|does|do|play|plays|next|match|matches|fixture|fixtures|football|soccer|today|tonight|tomorrow|yesterday|live|score|finished|completed|upcoming|scheduled|prediction|predict|percent)\b/gi, '').trim();
     if (/^[a-zA-Z][a-zA-Z .'-]{1,60}$/.test(englishName) && !/^(hello|hi|thanks|thank you|bot)$/i.test(englishName)) teams.push(normalize(englishName));
   }
   const sport = /(ผลบอล|สกอร์|โปรแกรมบอล|ตารางบอล|บอลวันนี้|บอลพรุ่งนี้|บอลเมื่อวาน|บอลสด|คู่ไหน|ใครเตะ|ใครแข่ง|มีบอล|แข่ง.*บ้าง|เตะ.*บ้าง|เกมคู่|คู่นี้|เกมนี้|แข่งขัน|แข่งวัน|คาดการณ์|วิเคราะห์บอล|ใครชนะ|ชนะ.*ไหม|โอกาส.*ชนะ|ชนะ.*กี่|เปอร์เซ็นต์|fixture|score|prediction|live|\svs\s|\sv\.\s)/iu.test(q) || teams.length > 0;
@@ -54,11 +54,12 @@ export function parseFootballQuestion(text, now = new Date()) {
   const live = !pending && !finished && /บอลสด|กำลังแข่ง|\blive\b/iu.test(q);
   const dated = Boolean(iso || slash || /วันนี้|คืนนี้|พรุ่งนี้|เมื่อวาน|เมื่อคืน|\b(?:today|tonight|tomorrow|yesterday)\b/iu.test(q));
   const prediction = /(คาดการณ์|วิเคราะห์|โอกาส|เปอร์เซ็นต์|ใครชนะ|ชนะ.*ไหม|prediction|predict|%)/iu.test(q);
+  const lineup = /\bline[ -]?ups?\b|ไลน์\s*อั[พป]|รายชื่อ(?:นักเตะ|ผู้เล่น)|ตัวจริง|สิบเอ็ดตัวจริง|11\s*ตัวจริง/iu.test(q);
   // "เตะไหม" asks whether a game exists today, including live/finished games.
   const playingToday = /(?:เตะ|แข่ง|แข่งขัน|มีแข่ง)\s*(?:ไหม|มั้ย|หรือเปล่า|หรือไม่)/iu.test(q);
-  const upcoming = !dated && !live && !finished && !playingToday && (pending || (teams.length > 0 && !prediction));
+  const upcoming = !dated && !live && !finished && !playingToday && !lineup && (pending || (teams.length > 0 && !prediction));
   return {
-    sport: sport || pending || finished, date, valid: validDate(date), teams, upcoming,
+    sport: sport || pending || finished || lineup, date, valid: validDate(date), teams, upcoming, lineup,
     scheduled: !finished && (pending || upcoming), live, prediction, finished
   };
 }

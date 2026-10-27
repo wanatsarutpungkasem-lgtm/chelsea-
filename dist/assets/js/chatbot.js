@@ -175,12 +175,16 @@
   async function footballRequest(text, selectedTopic, faqTopic) {
     if (selectedTopic && !selectedTopic.startsWith('football-')) return null;
     const strong = /(ผลบอล|สกอร์|โปรแกรมบอล|บอลวันนี้|บอลสด|บอลเมื่อวาน|(?:เตะ|แข่ง).*(?:วันไหน|เมื่อไหร่|ไหม|มั้ย|หรือเปล่า|หรือไม่)|นัดหน้า|นัดถัดไป|\bnext\b|\bwhen\b|ใคร.*(?:ชนะ|เตะ|แข่ง)|มีบอล|โอกาส.*ชนะ|คาดการณ์|เปอร์เซ็นต์|\svs\s)/iu.test(text);
-    if (faqTopic && !selectedTopic?.startsWith('football-') && !strong) return null;
+    if (faqTopic && !selectedTopic?.startsWith('football-') && !strong && !/line[ -]?up|ไลน์|รายชื่อ|ตัวจริง/iu.test(text)) return null;
     const mod = await footballModule;
     const presets = { 'football-today': 'บอลวันนี้', 'football-upcoming': 'ฟุตบอลกำลังจะเตะ', 'football-finished': 'ฟุตบอลแข่งจบแล้ว', 'football-live': 'บอลสด', 'football-yesterday': 'ผลบอลเมื่อวาน', 'football-prediction': 'คาดการณ์บอลวันนี้' };
     const plan = mod.parseFootballQuestion(presets[selectedTopic] || text);
     if (!plan.sport) return null;
     if (!plan.valid) throw new Error('วันที่ไม่ถูกต้องครับ ลองระบุ YYYY-MM-DD เช่น 2026-11-01');
+    if (plan.lineup && !plan.teams.length) {
+      if (lastFixtureId) return {mode:'lineup',fixture:String(lastFixtureId)};
+      throw new Error('Line-up ใน API มักมาก่อนเริ่มแข่ง 20–40 นาที เฉพาะลีกที่รองรับ และบางลีกมาหลังแข่งครับ กรุณาค้นคู่แข่งขันแล้วกด “ดู Line-up” เพื่อเช็กข้อมูลของคู่นั้น');
+    }
     if (/คู่นี้|เกมนี้/iu.test(text) && !plan.teams.length) {
       if (!lastFixtureId) throw new Error('กรุณาเลือกคู่จากรายการด้วยปุ่ม “ดูผลคู่นี้” หรือ “คาดการณ์ %” ก่อนครับ');
       return { mode: plan.prediction ? 'prediction' : 'fixture', fixture: String(lastFixtureId) };
@@ -229,6 +233,9 @@
       const detail = element('button', '', 'ดูผลคู่นี้'); detail.type = 'button';
       detail.addEventListener('click', () => { lastFixtureId = fixture.id; respond(`${fixture.home.name} vs ${fixture.away.name} — ดูผล`, null, { mode: 'fixture', fixture: String(fixture.id) }); });
       actions.append(detail);
+      const lineup = element('button', '', 'ดู Line-up'); lineup.type = 'button';
+      lineup.addEventListener('click', () => { lastFixtureId = fixture.id; respond(`${fixture.home.name} vs ${fixture.away.name} — Line-up`, null, {mode:'lineup',fixture:String(fixture.id)}); });
+      actions.append(lineup);
       if (fixture.status === 'NS') {
         const prediction = element('button', 'football-predict', 'คาดการณ์ %'); prediction.type = 'button';
         prediction.addEventListener('click', () => { lastFixtureId = fixture.id; respond(`${fixture.home.name} vs ${fixture.away.name} — คาดการณ์`, null, { mode: 'prediction', fixture: String(fixture.id) }); });
@@ -257,6 +264,32 @@
     } else {
       lastFixtureId = data.fixture.id;
       block.append(fixtureCard(data.fixture, data.kind === 'fixture'));
+      if (data.kind === 'lineup') {
+        block.append(element('h3','football-prediction-title',data.status === 'ready' ? 'Line-up ครบทั้งสองทีมแล้ว' : data.status === 'partial' ? 'Line-up มีข้อมูลบางส่วน' : 'ยังไม่มี Line-up ในข้อมูลผู้ให้บริการ'));
+        if (data.expectedWindow) {
+          const format = value => new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value));
+          block.append(element('p','football-note',`ช่วงที่ API มักเริ่มมีข้อมูล: ${format(data.expectedWindow.from)} ถึง ${format(data.expectedWindow.to)} เวลาไทย (ไม่ยืนยันเวลาประกาศ)`));
+        }
+        data.lineups.forEach(team => {
+          const section = element('section','football-card');
+          section.append(element('h3','',team.team.name));
+          if (!team.available) section.append(element('p','football-note','ยังไม่มีรายชื่อของทีมนี้ อาจยังไม่ประกาศหรืออยู่นอกความครอบคลุม'));
+          else {
+            section.append(element('p','football-note',`แผน: ${team.formation || 'ยังไม่มีข้อมูล'} · โค้ช: ${team.coach || 'ยังไม่มีข้อมูล'}`));
+            [['ตัวจริง',team.starters],['ตัวสำรอง',team.substitutes]].forEach(([label,players])=>{
+              section.append(element('h4','',`${label} (${players.length})`));
+              const list=element('ul','');
+              players.forEach(p=>list.append(element('li','',`${p.number ?? '–'} · ${p.name}${p.position ? ' · '+p.position : ''}`)));
+              section.append(list);
+            });
+          }
+          block.append(section);
+        });
+        block.append(element('p','football-note',data.note));
+        const retry=element('button','football-more','ตรวจ Line-up อีกครั้ง'); retry.type='button';
+        retry.addEventListener('click',()=>respond('ตรวจ Line-up อีกครั้ง',null,{mode:'lineup',fixture:String(data.fixture.id)}));
+        block.append(retry);
+      }
       if (data.kind === 'prediction') {
         if (!data.available) block.append(element('p', 'football-note', data.reason));
         else {

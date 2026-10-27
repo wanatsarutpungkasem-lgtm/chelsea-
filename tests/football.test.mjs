@@ -231,3 +231,42 @@ test('playing-today searches do not hide a live or finished Al Taee game', async
     assert.equal(body.fixtures[0].status,status);
   }
 });
+
+test('lineup questions recognize Thai and English without inventing a team name', () => {
+  for(const text of ['line up มาตอนไหน','lineup คู่นี้','ไลน์อัพคู่นี้','รายชื่อนักเตะคู่นี้']) {
+    const p=parseFootballQuestion(text,CLOCK);
+    assert.equal(p.lineup,true,text); assert.equal(p.sport,true,text); assert.deepEqual(p.teams,[],text);
+  }
+  const p=parseFootballQuestion('Chelsea lineup',CLOCK);
+  assert.deepEqual(p.teams,['chelsea']); assert.equal(p.lineup,true); assert.equal(p.upcoming,false);
+});
+async function lineupTest(rows) {
+  const calls=[];
+  const f=fixture(101,'NS');
+  const handler=createFootballHandler({getKey:()=> 'test-only',now:()=>CLOCK,fetcher:async url=>{
+    calls.push(new URL(url));
+    return Response.json({errors:[],response:new URL(url).pathname==='/fixtures/lineups'?rows:[f]});
+  }});
+  const response=await handler(new Request('https://test.invalid/?mode=lineup&fixture=101'));
+  return {response,body:await response.json(),calls};
+}
+const lineupTeam = (id,count=11) => ({team:{id},formation:'4-3-3',coach:{name:'Test Coach'},startXI:Array.from({length:count},(_,i)=>({player:{name:'Test Player '+i,number:i+1,pos:'M'}})),substitutes:[{player:{name:'Test Sub',number:12,pos:'G'}}]});
+test('lineups return both starting elevens, bench and an indicative 20–40 minute window',async()=>{
+  const {body,response,calls}=await lineupTest([lineupTeam(202),lineupTeam(203)]);
+  assert.equal(response.status,200); assert.equal(body.status,'ready');
+  assert.equal(body.lineups[0].starters.length,11); assert.equal(body.lineups[1].substitutes.length,1);
+  const kickoff=new Date(body.fixture.date).getTime();
+  assert.equal(new Date(body.expectedWindow.from).getTime(),kickoff-40*60000);
+  assert.equal(new Date(body.expectedWindow.to).getTime(),kickoff-20*60000);
+  assert.equal(calls[1].pathname,'/fixtures/lineups'); assert.equal(calls[1].searchParams.get('fixture'),'101');
+});
+test('empty, one-sided and incomplete lineups are never called fully announced',async()=>{
+  assert.equal((await lineupTest([])).body.status,'unavailable');
+  assert.equal((await lineupTest([lineupTeam(202)])).body.status,'partial');
+  assert.equal((await lineupTest([lineupTeam(202,10),lineupTeam(203)])).body.status,'partial');
+});
+test('invalid fixture IDs spend no lineup quota',async()=>{
+  const handler=createFootballHandler({getKey:()=> 'test-only',fetcher:()=>assert.fail('unexpected provider request')});
+  const r=await handler(new Request('https://test.invalid/?mode=lineup&fixture=oops'));
+  assert.equal(r.status,400);
+});

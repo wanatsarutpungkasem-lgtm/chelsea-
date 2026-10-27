@@ -89,7 +89,7 @@ export function createFootballHandler({
       if (request.method !== 'GET') return new Response(null, { status: 405, headers: { Allow: 'GET' } });
       const p = new URL(request.url).searchParams;
       const mode = p.get('mode') || 'fixtures';
-      if (!['fixtures', 'fixture', 'prediction'].includes(mode)) fail(400, 'INVALID_MODE', 'รูปแบบการค้นหาไม่ถูกต้องครับ');
+      if (!['fixtures', 'fixture', 'prediction', 'lineup'].includes(mode)) fail(400, 'INVALID_MODE', 'รูปแบบการค้นหาไม่ถูกต้องครับ');
       const base = { source: 'API-Football / API-Sports', timezone: TIMEZONE,
         coverage: 'ข้อมูลครอบคลุมตามลีก ฤดูกาล และแพ็กเกจของผู้ให้บริการ อาจมีความล่าช้า' };
       if (mode === 'fixtures') {
@@ -132,6 +132,24 @@ export function createFootballHandler({
       if (!fetched.rows.length) fail(404, 'FIXTURE_NOT_FOUND', 'ไม่พบคู่แข่งขันนี้ในข้อมูลผู้ให้บริการครับ');
       const fixture = mapFixture(fetched.rows[0]);
       if (mode === 'fixture') return json({ ...base, kind: 'fixture', fixture, fetchedAt: fetched.fetchedAt }, 200, 60);
+      if (mode === 'lineup') {
+        const result = await provider('/fixtures/lineups', {fixture: fixtureId}, 900000);
+        const players = rows => (Array.isArray(rows) ? rows : []).map(r => r.player).filter(p => p && typeof p.name === 'string').map(p => ({name:p.name, number:p.number ?? null, position:p.pos ?? null}));
+        const lineups = [fixture.home, fixture.away].map(team => {
+          const row = result.rows.find(r => r.team?.id === team.id);
+          const starters = players(row?.startXI);
+          return {team, formation:row?.formation || null, coach:row?.coach?.name || null,
+            starters, substitutes:players(row?.substitutes), available:starters.length > 0, complete:starters.length === 11};
+        });
+        const kickoff = new Date(fixture.date).getTime();
+        const expectedWindow = fixture.status === 'NS' && Number.isFinite(kickoff) ? {
+          from:new Date(kickoff - 40*60000).toISOString(), to:new Date(kickoff - 20*60000).toISOString()
+        } : null;
+        return json({...base, kind:'lineup', fixture, lineups,
+          status:lineups.every(t=>t.complete) ? 'ready' : lineups.some(t=>t.available) ? 'partial' : 'unavailable',
+          expectedWindow, fetchedAt:result.fetchedAt,
+          note:'ผู้ให้บริการมักมี Line-up ก่อนเริ่มแข่ง 20–40 นาที เฉพาะลีกที่รองรับ บางลีกอาจมาหลังแข่ง ช่วงเวลานี้ไม่ใช่กำหนดประกาศที่ยืนยัน ข้อมูลแคชได้สูงสุด 15 นาที'} ,200,60);
+      }
       if (fixture.status !== 'NS') return json({ ...base, kind: 'prediction', fixture,
         available: false, reason: fixture.finished ? 'คู่นี้จบการแข่งขันแล้ว แสดงผลจริงแทนการคาดการณ์ครับ' : 'ระบบนี้แสดงค่าคาดการณ์ก่อนเริ่มแข่งเท่านั้น ยังไม่มีโอกาสชนะระหว่างเกมครับ', fetchedAt: fetched.fetchedAt }, 200, 60);
       const prediction = await provider('/predictions', { fixture: fixtureId }, 3600000);

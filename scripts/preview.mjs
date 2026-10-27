@@ -18,7 +18,8 @@ const football = testData ? createFootballHandler({
   getKey: () => 'local-ui-test-only',
   fetcher: async url => {
     const u = new URL(url);
-    const rows = u.pathname === '/predictions' ? [{ predictions: { percent: { home: '45%', draw: '30%', away: '25%' } } }]
+    const rows = u.pathname === '/fixtures/lineups' ? [1,2].map(id=>({team:{id},formation:'4-3-3',coach:{name:'Test Coach'},startXI:Array.from({length:11},(_,i)=>({player:{name:'Test Player '+(i+1),number:i+1,pos:'M'}})),substitutes:[{player:{name:'Test Substitute',number:12,pos:'G'}}]}))
+      : u.pathname === '/predictions' ? [{ predictions: { percent: { home: '45%', draw: '30%', away: '25%' } } }]
       : u.searchParams.has('id') ? [sample(u.searchParams.get('id') === '9002' ? 'FT' : 'NS')] : [sample('NS'), sample('FT')];
     return Response.json({ errors: [], response: rows, paging: { current: 1, total: 1 } });
   }
