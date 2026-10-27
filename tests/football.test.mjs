@@ -1,0 +1,138 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { bangkokDate, validDate, parseFootballQuestion } from '../dist/assets/js/football-query.mjs';
+import { createFootballHandler, mapFixture, parsePercentages } from '../netlify/functions/football.mjs';
+
+const CLOCK = new Date('2026-10-27T18:30:00Z');
+function fixture(id = 101, status = 'NS', home = 'Test Home', away = 'Test Away') {
+  return { fixture: { id, date: '2026-10-28T14:00:00+07:00', status: { short: status, elapsed: status === '2H' ? 65 : null } },
+    league: { name: 'Test League', country: 'Test Country', round: 'Test round' },
+    teams: { home: { id: id * 2, name: home }, away: { id: id * 2 + 1, name: away } },
+    goals: { home: status === 'NS' ? null : 0, away: status === 'NS' ? null : 0 },
+    score: { penalty: { home: null, away: null } } };
+}
+function mockProvider(rows, prediction = { home: '45%', draw: '30%', away: '25%' }) {
+  const calls = [];
+  const fetcher = async (url, options) => {
+    calls.push({ url: String(url), options });
+    const data = new URL(url).pathname === '/predictions' ? [{ predictions: { percent: prediction } }] : rows;
+    return Response.json({ errors: [], response: data, paging: { current: 1, total: 1 } });
+  };
+  const handler = createFootballHandler({ getKey: () => 'unit-test-secret', fetcher, now: () => CLOCK });
+  const run = async query => {
+    const response = await handler(new Request('https://example.invalid/.netlify/functions/football?' + new URLSearchParams(query)));
+    return { response, body: await response.json() };
+  };
+  return { calls, handler, run };
+}
+
+test('dates use Bangkok day across UTC midnight and year rollover', () => {
+  assert.equal(bangkokDate(CLOCK), '2026-10-28');
+  assert.equal(bangkokDate(new Date('2026-12-31T18:00:00Z'), 1), '2027-01-02');
+  assert.equal(parseFootballQuestion('ผลบอลเมื่อวาน', CLOCK).date, '2026-10-27');
+  assert.equal(parseFootballQuestion('ผลบอลเมื่อคืน', CLOCK).date, '2026-10-27');
+  assert.equal(parseFootballQuestion('บอลพรุ่งนี้', CLOCK).date, '2026-10-29');
+});
+test('rejects impossible dates instead of rolling them into another month', () => {
+  assert.equal(validDate('2026-02-30'), false);
+  assert.equal(validDate('2028-02-29'), true);
+  assert.equal(parseFootballQuestion('ผลบอล 2026-13-02', CLOCK).valid, false);
+});
+test('Thai club aliases and Buddhist-year dates are parsed without forwarding raw chat', () => {
+  const q = parseFootballQuestion('เชลซี พบ อาร์เซนอล คาดการณ์ 28/10/2569', CLOCK);
+  assert.deepEqual(q.teams, ['chelsea', 'arsenal']);
+  assert.equal(q.date, '2026-10-28');
+  assert.equal(q.prediction, true);
+});
+test('unlisted English club pairs can be searched', () => {
+  assert.deepEqual(parseFootballQuestion('Ajax vs PSV 2026-11-01', CLOCK).teams, ['ajax', 'psv']);
+  assert.equal(parseFootballQuestion('วันนี้มีใครเตะบ้าง', CLOCK).sport, true);
+  assert.equal(parseFootballQuestion('เกมนี้จบเท่าไหร่', CLOCK).sport, true);
+});
+test('actual zero scores and unplayed null scores stay distinct', () => {
+  assert.deepEqual(mapFixture(fixture(1, 'FT')).goals, { home: 0, away: 0 });
+  assert.deepEqual(mapFixture(fixture(1, 'NS')).goals, { home: null, away: null });
+  assert.equal(mapFixture(fixture(1, 'PST')).finished, false);
+});
+test('valid percentages include zero and malformed totals are not invented', () => {
+  assert.deepEqual(parsePercentages({ home: '100%', draw: '0%', away: '0%' }), { home: 100, draw: 0, away: 0 });
+  assert.equal(parsePercentages({ home: '70%', draw: '70%', away: '0%' }), null);
+  assert.equal(parsePercentages({ home: '', draw: '50%', away: '50%' }), null);
+  assert.equal(parsePercentages({ home: '-5%', draw: '55%', away: '50%' }), null);
+  assert.equal(parsePercentages(null), null);
+});
+test('missing key is a clear setup response and never calls the provider', async () => {
+  const handler = createFootballHandler({ getKey: () => '', fetcher: () => assert.fail('unexpected upstream request') });
+  const response = await handler(new Request('https://test.invalid/?date=2026-10-28'));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error.code, 'FOOTBALL_NOT_CONFIGURED');
+  assert.equal(response.headers.get('Netlify-CDN-Cache-Control'), 'no-store');
+});
+test('date and method validation happen before spending API quota', async () => {
+  const api = mockProvider([]);
+  assert.equal((await api.run({ date: '2026-02-30' })).response.status, 400);
+  assert.equal((await api.run({ date: '2026-10-28', page: '-1' })).response.status, 400);
+  assert.equal((await api.run({ teams: 'not-json' })).response.status, 400);
+  assert.equal((await api.handler(new Request('https://test.invalid/', { method: 'POST' }))).status, 405);
+  assert.equal(api.calls.length, 0);
+});
+test('daily results are paginated, cached and do not expose keys', async () => {
+  const api = mockProvider(Array.from({ length: 12 }, (_, i) => fixture(i + 1)));
+  const first = await api.run({ date: '2026-10-28' });
+  const second = await api.run({ date: '2026-10-28', page: '2' });
+  assert.equal(first.body.total, 12); assert.equal(first.body.fixtures.length, 10); assert.equal(first.body.hasMore, true);
+  assert.equal(second.body.fixtures.length, 2); assert.equal(second.body.hasMore, false);
+  assert.equal(api.calls.length, 1);
+  assert.match(first.response.headers.get('Netlify-CDN-Cache-Control'), /durable/);
+  assert.equal(JSON.stringify(first.body).includes('unit-test-secret'), false);
+  assert.equal(api.calls[0].options.headers['x-apisports-key'], 'unit-test-secret');
+});
+test('two-team search distinguishes opponents and also accepts a zero-result search', async () => {
+  const api = mockProvider([fixture(1, 'FT', 'Chelsea', 'Arsenal'), fixture(2, 'FT', 'Chelsea', 'Test Away')]);
+  const result = await api.run({ date: '2026-10-28', teams: JSON.stringify(['chelsea', 'arsenal']) });
+  assert.equal(result.body.total, 1);
+  assert.equal((await api.run({ date: '2026-10-28', teams: JSON.stringify(['ajax']) })).body.total, 0);
+});
+test('live and finished filters use actual provider status', async () => {
+  const api = mockProvider([fixture(1, 'FT'), fixture(2, '2H'), fixture(3, 'NS')]);
+  assert.equal((await api.run({ date: '2026-10-28', finished: '1' })).body.total, 1);
+  await api.run({ live: '1' });
+  assert.equal(new URL(api.calls.at(-1).url).searchParams.get('live'), 'all');
+});
+test('pregame predictions preserve the provider breakdown', async () => {
+  const api = mockProvider([fixture()]);
+  const { body } = await api.run({ mode: 'prediction', fixture: '101' });
+  assert.equal(body.available, true);
+  assert.deepEqual(body.percentages, { home: 45, draw: 30, away: 25 });
+  assert.match(body.note, /ไม่ใช่โมเดลที่ Bot Chelsea คำนวณเอง/);
+});
+test('finished and live matches never show an outdated pregame prediction', async () => {
+  for (const state of ['FT', 'PEN', '2H', 'PST']) {
+    const api = mockProvider([fixture(101, state)]);
+    const { body } = await api.run({ mode: 'prediction', fixture: '101' });
+    assert.equal(body.available, false);
+    assert.equal(api.calls.length, 1);
+  }
+});
+test('incomplete prediction data is unavailable instead of guessed', async () => {
+  const api = mockProvider([fixture()], { home: null, draw: '40%', away: '60%' });
+  const { body } = await api.run({ mode: 'prediction', fixture: '101' });
+  assert.equal(body.available, false); assert.equal(body.percentages, null);
+});
+test('quota and plan errors inside HTTP 200 are not interpreted as no matches', async () => {
+  for (const [errors, status, code] of [
+    [{ requests: 'Daily request limit reached' }, 429, 'PROVIDER_QUOTA'],
+    [{ plan: 'Season not available in your subscription' }, 503, 'PROVIDER_COVERAGE']
+  ]) {
+    const handler = createFootballHandler({ getKey: () => 'test-secret', fetcher: async () => Response.json({ errors, response: [] }) });
+    const response = await handler(new Request('https://test.invalid/?date=2026-10-28'));
+    assert.equal(response.status, status); assert.equal((await response.json()).error.code, code);
+  }
+});
+test('provider timeouts and missing fixtures return meaningful errors', async () => {
+  const handler = createFootballHandler({ getKey: () => 'test-secret', fetcher: async () => { throw new Error('network'); } });
+  assert.equal((await handler(new Request('https://test.invalid/?date=2026-10-28'))).status, 504);
+  const api = mockProvider([]);
+  const missing = await api.run({ mode: 'fixture', fixture: '101' });
+  assert.equal(missing.response.status, 404);
+});

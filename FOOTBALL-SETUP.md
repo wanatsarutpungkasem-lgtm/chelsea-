@@ -1,0 +1,107 @@
+# Bot Chelsea — โปรแกรม สกอร์ และค่าคาดการณ์
+
+## ทำอะไรได้
+
+- ชื่อบอต **Bot Chelsea** พร้อมเอฟเฟกต์แสง แอนิเมชันหุ่นยนต์ และข้อความ โดยรองรับ reduced motion
+- โปรแกรมและผลรายวัน ทุกลีกที่ API ส่งคืน พร้อมแบ่งหน้าครั้งละ 10 คู่
+- คู่ที่กำลังแข่ง และผลย้อนหลังตามวันที่
+- ค้นหาชื่อทีมไทยที่เตรียม alias ไว้ หรือชื่อทีมภาษาอังกฤษ เช่น `Ajax vs PSV 2026-11-01`
+- เลือกคู่จากรายการเพื่อดูผล หรือดูโอกาสเจ้าบ้านชนะ / เสมอ / ทีมเยือนชนะ ก่อนเริ่มแข่ง
+- เปอร์เซ็นต์มาจากแบบจำลองของ API-Football ไม่ได้สร้างตัวเลขเอง และไม่ใช่ราคาเดิมพันหรือผลที่รับประกัน
+- แยกเกมที่ยังไม่เริ่ม, สกอร์ 0–0, ต่อเวลา, จุดโทษ, เลื่อนแข่ง และเกมยกเลิก
+- แสดงเวลาประเทศไทยและเวลาที่ดึงข้อมูล
+
+ครอบคลุมตามลีก ฤดูกาล และแพ็กเกจของผู้ให้บริการ ไม่รับประกันทุกคู่ทั่วโลก และบางลีกอาจไม่มี livescore หรือ prediction รวมถึงอาจมีความล่าช้า
+
+บอตยังไม่ใช่ AI สนทนาอิสระ การค้นหาเป็นการจับหัวข้อ ชื่อทีม และวันที่ ต้องระบุวันที่เมื่อถามคู่เก่าหรือคู่อนาคต และเลือกคู่จากรายการเมื่อมีชื่อทีมซ้ำกัน
+
+## 1. สร้าง API key
+
+1. เปิด https://dashboard.api-football.com/ และสมัครหรือลงชื่อเข้าใช้
+2. ตรวจ API key ใน Dashboard ของ API-Football / API-Sports โดยตรง
+3. ตรวจว่าแพ็กเกจรองรับฤดูกาลและ endpoint `/fixtures` และ `/predictions` ที่ต้องการ
+
+โค้ดนี้ใช้ direct API ที่ `v3.football.api-sports.io` กับ header `x-apisports-key` ไม่ใช่ key ของ RapidAPI
+
+ไม่ต้องส่ง key ในแชต และไม่ต้องใส่ลง GitHub, HTML หรือ JavaScript ฝั่งหน้าเว็บ
+
+## 2. ตั้งค่า Netlify
+
+เปิดโปรเจกต์ https://app.netlify.com/projects/fan-chelsea แล้วเข้า **Environment variables**
+
+- Key: `FOOTBALL_API_KEY`
+- Value: API key ของคุณ
+- ทำเครื่องหมายว่าเป็น secret หากมีตัวเลือก
+- ใช้กับ production และต้องครอบคลุม scope **Functions** หากหน้าจอมีให้เลือก
+
+ห้ามใส่ key ใน `netlify.toml` เพราะค่าในไฟล์นี้ไม่ถูกส่งให้ Functions ตอนรันจริง
+
+หลังเพิ่มหรือเปลี่ยน environment variable ต้อง deploy ใหม่จึงมีผล
+
+## 3. อัปโหลดซอร์สครบชุดไป GitHub
+
+แตก `bot-chelsea-football-update.zip` แล้วอัปโหลดรายการต่อไปนี้ไว้ที่ระดับหลักของ repository `chelsea-`:
+
+```text
+dist/                  # หน้าเว็บ CSS และ JS
+netlify/               # server function ต้องอยู่ด้านนอก dist
+tests/                 # ชุดทดสอบที่ใช้ก่อน deploy
+netlify.toml
+package.json
+package-lock.json
+```
+
+Commit ไป `main` แล้วรอ Netlify แสดง Ready
+
+ตั้งค่า build ผ่าน `netlify.toml` ให้แล้ว: `npm test`, publish `dist`, functions `netlify/functions`, Node 22
+
+อัปโหลดเฉพาะ dist หรือใช้ Netlify Drop จะไม่ติดตั้ง server function ของชุดนี้ ต้องใช้ Git deployment หรือ Netlify CLI ที่ deploy Functions ด้วย
+
+## 4. ทดสอบบนเว็บจริง
+
+- เปิด Bot Chelsea แล้วกด `บอลวันนี้`
+- ถ้าไม่มี key: จะแจ้งว่าบริการข้อมูลฟุตบอลยังไม่เปิด ไม่มีสกอร์หรือเปอร์เซ็นต์สมมติ
+- ถ้า key ไม่ถูกต้อง แพ็กเกจไม่รองรับ หรือโควตาหมด: จะแจ้งปัญหาแทนการแสดงรายการว่าง
+- เลือกคู่ที่ยังไม่เริ่มแล้วกด `คาดการณ์ %`
+- หากผู้ให้บริการไม่มี prediction จะแจ้งว่าไม่พบค่าที่สมบูรณ์
+- ค่าคาดการณ์ก่อนแข่งจะไม่แสดงเป็นโอกาสชนะระหว่างเกมหรือหลังเกมจบ
+
+## ประวัติแชทและโควตา
+
+ยังไม่บันทึกประวัติแชทในฐานข้อมูลหรือ localStorage ระบบส่งเฉพาะวัน ชื่อทีม และรหัสคู่ที่ต้องค้นหา ไม่ส่งบทสนทนาทั้งหมด ไม่เรียกบริการ LLM
+
+API เป็นแบบกดเรียกเอง ไม่มี auto polling ตั้ง CDN cache 60 วินาที และ rate limit 30 ครั้ง/นาที/IP ไว้ แต่โควตารวมยังขึ้นกับแพ็กเกจ API ของคุณ และการค้นหาหลายวัน/หลายคู่ยังใช้โควตาได้
+
+## ทดสอบบนเครื่อง
+
+```text
+npm test
+node scripts/preview.mjs
+```
+
+เปิด http://127.0.0.1:4173 โดยไม่มี key จะเห็นสถานะยังไม่ตั้งค่าบริการ
+
+สำหรับ UI QA เท่านั้น: `node scripts/preview.mjs --test-data` ใช้ Test Alpha / Test Beta และติดป้ายว่าไม่ใช่ผลบอลจริง โหมดนี้อยู่ใน preview script และไม่ได้ใช้โดย production function
+
+## เอกสารผู้ให้บริการ
+
+- https://www.api-football.com/documentation_v3
+- https://www.api-football.com/news/post/how-to-get-started-with-api-football-the-complete-beginners-guide
+- https://www.api-football.com/coverage
+
+## สถานะการตรวจสอบ
+
+ทดสอบโปรแกรมด้วยข้อมูลจำลองในชุดทดสอบ และทดสอบการ์ด/เปอร์เซ็นต์ผ่าน UI แล้ว ยังทดสอบข้อมูลจริงหรือโควตาของบัญชี API ไม่ได้จนกว่าจะมี key และ deploy server function สำเร็จ
+
+## ฐานข้อมูลฟุตบอล (สร้างใน Supabase แล้ว 27 ต.ค. 2569)
+
+ตาราง `football_fixtures`, `football_predictions`, `football_api_cache` อยู่ในโปรเจกต์เดิม เปิด RLS และอนุญาตเฉพาะ backend ไม่มีการเก็บข้อความแชทหรือ key ในตาราง
+
+เพิ่ม environment variable ฝั่ง Netlify Functions:
+- `SUPABASE_URL` = `https://unjtfvxnxdgqlupzkgoc.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY` = service role ของโปรเจกต์นี้เท่านั้น (secret, ห้ามใส่ frontend/GitHub)
+- `FOOTBALL_API_KEY` = key ของ API-Football (secret)
+
+ถ้าไม่ตั้ง Supabase สกอร์ยังเรียกจากผู้ให้บริการได้ แต่จะไม่บันทึกลงตาราง ถ้าฐานข้อมูลขัดข้อง ระบบยังแสดงข้อมูลผู้ให้บริการโดยไม่แต่งผลขึ้นเอง แคชที่หมดอายุจะไม่ถูกนำมาแสดง และเขียนทับเมื่อค้นหารายการเดิมอีกครั้ง ไม่มีการไล่ดึงทุกแมตช์เข้าฐานล่วงหน้า
+
+ตรวจบัญชี API จริงผ่าน `/status` สำเร็จ: Free, active, 100 requests/day และ `/fixtures` วันที่ 2026-10-27 คืนข้อมูล 208 คู่ อย่างไรก็ตามยังต้อง deploy โค้ดและบันทึกตัวแปร Netlify ให้ครบเพื่อทดสอบเว็บจริง

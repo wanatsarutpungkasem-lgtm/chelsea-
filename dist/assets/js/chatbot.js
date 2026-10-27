@@ -7,11 +7,11 @@
   const launcher = document.createElement('button');
   launcher.type = 'button';
   launcher.className = 'nav-chat-button';
-  launcher.setAttribute('aria-label', 'เปิดแชทผู้ช่วย ' + config.brand);
+  launcher.setAttribute('aria-label', 'เปิดแชท Bot Chelsea');
   launcher.setAttribute('aria-haspopup', 'dialog');
   launcher.setAttribute('aria-controls', 'om-chat-dialog');
   launcher.setAttribute('aria-expanded', 'false');
-  launcher.innerHTML = robotMarkup + '<span class="chat-launcher-copy"><b>คุยกับบอต 💙</b><small>BLUE BUDDY · FAQ</small></span><span class="chat-ready-dot" aria-hidden="true"></span>';
+  launcher.innerHTML = robotMarkup + '<span class="chat-launcher-copy"><b>Bot Chelsea</b><small>FOOTBALL COMPANION</small></span><span class="chat-ready-dot" aria-hidden="true"></span>';
   const nav = document.querySelector('.nav');
   if (!nav) return;
   const oldSocial = nav.querySelector('.nav-social');
@@ -24,21 +24,24 @@
   dialog.setAttribute('aria-labelledby', 'om-chat-title');
   dialog.setAttribute('aria-describedby', 'om-chat-privacy');
   dialog.innerHTML = `
-    <header class="chat-dialog-header">${robotMarkup}<div class="chat-dialog-title"><h2 id="om-chat-title"></h2><p>BLUE BUDDY · ผู้ช่วยตอบคำถามทั่วไป</p></div><button type="button" class="chat-close" aria-label="ปิดแชท">×</button></header>
+    <header class="chat-dialog-header">${robotMarkup}<div class="chat-dialog-title"><h2 id="om-chat-title"></h2><p>BOT CHELSEA · เรื่องโอห์มและฟุตบอล</p></div><button type="button" class="chat-close" aria-label="ปิดแชท">×</button></header>
     <div class="chat-privacy" id="om-chat-privacy"><span aria-hidden="true">◈</span> ไม่บันทึกประวัติ · ข้อความหายเมื่อรีเฟรชหรือเปลี่ยนหน้า</div>
-    <div class="chat-tools"><span>คำตอบจากข้อมูลที่เตรียมไว้ ไม่ใช่ AI สนทนาอิสระ</span><button type="button" class="chat-reset">เริ่มใหม่</button></div>
+    <div class="chat-tools"><span>สกอร์จากผู้ให้บริการ · คาดการณ์ก่อนเริ่มแข่ง</span><button type="button" class="chat-reset">เริ่มใหม่</button></div>
     <div class="chat-messages" role="log" aria-label="บทสนทนากับผู้ช่วย" aria-live="polite" aria-relevant="additions"></div>
-    <p class="chat-prompt-caption">ถามเรื่องโอห์ม นักเตะ โค้ช ความฝัน หรือช่องทางติดต่อได้ครับ</p>
+    <p class="chat-prompt-caption">ลองถาม “เชลซี พบ อาร์เซนอล 2026-11-01” หรือ “ผลบอลเมื่อวาน”</p>
     <form class="chat-compose"><label class="sr-only" for="om-chat-input">ข้อความถึงผู้ช่วย</label><input id="om-chat-input" name="message" type="text" placeholder="พิมพ์คำถามของคุณ…" autocomplete="off" maxlength="500" required><button type="submit" aria-label="ส่งข้อความ">↗</button></form>
-    <p class="chat-footer">โหมดนี้ไม่ส่งข้อความของคุณไปเก็บในฐานข้อมูล</p>`;
+    <p class="chat-footer">ไม่เก็บประวัติแชท · คำค้นฟุตบอลใช้ดึงข้อมูลผ่านผู้ให้บริการ</p>`;
   document.body.append(dialog);
-  dialog.querySelector('#om-chat-title').textContent = config.brand;
+  dialog.querySelector('#om-chat-title').textContent = 'Bot Chelsea';
   const log = dialog.querySelector('.chat-messages');
   const form = dialog.querySelector('form');
   const input = dialog.querySelector('input');
   const send = form.querySelector('button');
   let opened = false;
   let busy = false;
+  let lastFixtureId = null;
+  let footballAbort = null;
+  const footballModule = import('./football-query.mjs');
   let epoch = 0;
   let knowledge = new Map(config.fallback.map(item => [item.slug, item]));
 
@@ -65,7 +68,7 @@
     row.className = 'chat-message' + (role === 'user' ? ' chat-message-user' : '');
     const label = document.createElement('span');
     label.className = 'chat-message-label';
-    label.textContent = role === 'user' ? 'คุณ' : 'BLUE BUDDY · ตอบอัตโนมัติ';
+    label.textContent = role === 'user' ? 'คุณ' : 'BOT CHELSEA · ตอบอัตโนมัติ';
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
     appendTextWithLinks(bubble, text);
@@ -78,9 +81,9 @@
   const quickTopics = [
     ['about-om', 'รู้จักโอห์ม'], ['favorite-players', 'นักเตะที่ชอบ'],
     ['favorite-coaches', 'โค้ชที่ชอบ'], ['stamford-dream', 'ความฝันของโอห์ม'],
-    ['contact-om', 'ช่องทางติดต่อ']
+    ['contact-om', 'ช่องทางติดต่อ'], ['football-today', '⚽ บอลวันนี้'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
   ];
-  function showQuickReplies() {
+  function showQuickReplies(autoScroll = true) {
     log.querySelector('.chat-quick-replies')?.remove();
     const choices = document.createElement('div');
     choices.className = 'chat-quick-replies';
@@ -93,20 +96,23 @@
       choices.append(button);
     });
     log.append(choices);
-    scrollToLatest();
+    if (autoScroll) scrollToLatest();
   }
   function reset() {
     epoch++;
+    footballAbort?.abort();
+    lastFixtureId = null;
     busy = false;
     send.disabled = false;
     log.replaceChildren();
     input.value = '';
-    message('bot', `สวัสดีครับ 💙 ยินดีต้อนรับสู่ ${config.brand}\nผมคือ Blue Buddy ผู้ช่วยตอบคำถามเกี่ยวกับโอห์ม ลองเลือกหัวข้อด้านล่างหรือพิมพ์ถามได้เลยครับ`);
+    message('bot', `สวัสดีครับ 💙 ยินดีต้อนรับสู่ ${config.brand}\nผมคือ Bot Chelsea ผู้ช่วยเรื่องโอห์มและฟุตบอล เลือกดูโปรแกรม ผลการแข่งขัน หรือค่าคาดการณ์ก่อนแข่งได้ครับ ข้อมูลฟุตบอลจะพร้อมเมื่อเชื่อมผู้ให้บริการแล้ว`);
     showQuickReplies();
   }
   function matchTopic(text) {
     const q = text.toLowerCase().replace(/\s+/g, ' ').trim();
-    if (/(เก็บ|บันทึก|ประวัติ|privacy|ข้อมูลส่วนตัว)/.test(q)) return 'privacy';
+    if (/(?:บอต|bot).*(?:ชื่อ|ใคร)|ชื่อ.*(?:บอต|bot)|^bot\s*chelsea$/i.test(q)) return 'bot-name';
+    if (/(เก็บ|บันทึก|ประวัติ(?:แชท|สนทนา)|privacy|ข้อมูลส่วนตัว)/.test(q)) return 'privacy';
     if (/(ฝากข้อความ|คุยกับ.*โดยตรง|คนจริง|แอดมิน|ทักโอ|ทักโอม)/.test(q)) return 'handoff';
     if (/(ติดต่อ|ติดตาม|เฟซ|เฟส|facebook|tiktok|ติ๊ก|ติ้ก|โซเชียล|social)/.test(q)) return 'contact-om';
     if (/(โค้ช|โค๊ช|ทูเคิล|อลอนโซ|coach|tuchel|alonso)/.test(q)) return 'favorite-coaches';
@@ -118,14 +124,15 @@
     return null;
   }
   function getAnswer(topic) {
-    if (topic === 'privacy') return 'เวอร์ชันนี้ไม่บันทึกประวัติแชทครับ ข้อความอยู่เฉพาะหน้าที่เปิดอยู่และจะหายเมื่อรีเฟรชหรือเปลี่ยนหน้า ไม่มีการส่งข้อความของคุณไปเก็บใน Supabase หรือส่งให้บริการ AI ครับ';
+    if (topic === 'bot-name') return 'ผมชื่อ Bot Chelsea ครับ 💙 เป็นผู้ช่วยอัตโนมัติของอ้ายโอห์ม ตอบข้อมูลเกี่ยวกับโอห์ม และค้นโปรแกรม สกอร์ หรือค่าคาดการณ์ก่อนแข่งเมื่อเชื่อมบริการข้อมูลฟุตบอลแล้วครับ';
+    if (topic === 'privacy') return 'เวอร์ชันนี้ไม่บันทึกประวัติแชทครับ ข้อความอยู่เฉพาะหน้าที่เปิดอยู่และจะหายเมื่อรีเฟรชหรือเปลี่ยนหน้า ไม่มีการเก็บข้อความลง Supabase ครับ สำหรับคำถามฟุตบอล ระบบส่งเฉพาะวัน ชื่อทีม และรหัสคู่ที่เลือกไปยังบริการข้อมูลเพื่อค้นสกอร์ โดยไม่ส่งบทสนทนาทั้งหมดและไม่เรียกโมเดล AI ครับ';
     if (topic === 'handoff') return 'ตอนนี้เป็นโหมดตอบคำถามทั่วไป ยังรับฝากข้อความไม่ได้ครับ หากอยากคุยกับโอห์มโดยตรง แวะไปที่ Facebook: https://www.facebook.com/wanatsarutcp/ หรือ TikTok: https://www.tiktok.com/@ohmwntsrut ได้เลยครับ 💙';
-    if (topic === 'greeting') return 'สวัสดีครับ 💙 ผมคือ Blue Buddy ผู้ช่วยของอ้ายโอห์ม อยากรู้จักโอห์ม หรือถามเรื่องนักเตะ โค้ช และความฝันได้เลยครับ';
+    if (topic === 'greeting') return 'สวัสดีครับ 💙 ผมคือ Bot Chelsea ผู้ช่วยของอ้ายโอห์ม อยากรู้จักโอห์ม หรือถามเรื่องนักเตะ โค้ช และความฝันได้เลยครับ';
     if (topic === 'thanks') return 'ยินดีครับ 💙 มีเรื่องไหนอยากรู้เกี่ยวกับโอห์ม เลือกคำถามด้านล่างได้เลยนะครับ';
     if (topic && knowledge.has(topic)) return knowledge.get(topic).answer;
-    return 'ตอนนี้ผมตอบได้เฉพาะข้อมูลเกี่ยวกับโอห์มที่เตรียมไว้ครับ ยังไม่ได้เชื่อม AI หรือข่าวฟุตบอลสด ลองถามเรื่องนักเตะที่ชอบ ความฝัน หรือช่องทางติดต่อจากปุ่มด้านล่างได้เลยครับ 💙';
+    return 'ลองถามเรื่องโอห์ม หรือดูฟุตบอลด้วยคำว่า “บอลวันนี้”, “ผลบอลเมื่อวาน” และ “เชลซี vs อาร์เซนอล YYYY-MM-DD” ได้ครับ หากอยากดูโอกาสชนะ ให้เลือกคู่ที่ยังไม่แข่งแล้วกดคาดการณ์ครับ 💙';
   }
-  async function respond(text, selectedTopic) {
+  async function respond(text, selectedTopic, explicitRequest) {
     if (busy) return;
     busy = true;
     send.disabled = true;
@@ -135,17 +142,141 @@
     input.value = '';
     const typing = document.createElement('span');
     typing.className = 'chat-typing';
-    typing.textContent = 'ผู้ช่วยกำลังเตรียมคำตอบ…';
+    typing.textContent = 'Bot Chelsea กำลังเตรียมข้อมูล…';
     log.append(typing);
     scrollToLatest();
     await new Promise(resolve => setTimeout(resolve, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 280));
-    if (epoch !== currentEpoch) return;
-    typing.remove();
-    message('bot', getAnswer(selectedTopic || matchTopic(text)));
-    showQuickReplies();
+    const faqTopic = selectedTopic || matchTopic(text);
+    let footballResult = null;
+    try {
+      const request = explicitRequest || await footballRequest(text, selectedTopic, faqTopic);
+      if (request) {
+        typing.textContent = 'กำลังดึงข้อมูลฟุตบอล…';
+        const result = await fetchFootball(request);
+        if (epoch !== currentEpoch) return;
+        typing.remove();
+        footballResult = renderFootball(result, request);
+      } else {
+        if (epoch !== currentEpoch) return;
+        typing.remove();
+        message('bot', getAnswer(faqTopic));
+      }
+    } catch (error) {
+      if (epoch !== currentEpoch) return;
+      typing.remove();
+      message('bot', error.message || 'โหลดข้อมูลฟุตบอลไม่สำเร็จครับ');
+    }
+    showQuickReplies(!footballResult);
+    if (footballResult) log.scrollTop += footballResult.getBoundingClientRect().top - log.getBoundingClientRect().top - 10;
     busy = false;
     send.disabled = false;
     if (dialog.open) input.focus({ preventScroll: true });
+  }
+  async function footballRequest(text, selectedTopic, faqTopic) {
+    if (selectedTopic && !selectedTopic.startsWith('football-')) return null;
+    const strong = /(ผลบอล|สกอร์|โปรแกรมบอล|บอลวันนี้|บอลสด|บอลเมื่อวาน|ใคร.*(?:ชนะ|เตะ|แข่ง)|มีบอล|โอกาส.*ชนะ|คาดการณ์|เปอร์เซ็นต์|\svs\s)/iu.test(text);
+    if (faqTopic && !selectedTopic?.startsWith('football-') && !strong) return null;
+    const mod = await footballModule;
+    const presets = { 'football-today': 'บอลวันนี้', 'football-live': 'บอลสด', 'football-yesterday': 'ผลบอลเมื่อวาน', 'football-prediction': 'คาดการณ์บอลวันนี้' };
+    const plan = mod.parseFootballQuestion(presets[selectedTopic] || text);
+    if (!plan.sport) return null;
+    if (!plan.valid) throw new Error('วันที่ไม่ถูกต้องครับ ลองระบุ YYYY-MM-DD เช่น 2026-11-01');
+    if (/คู่นี้|เกมนี้/iu.test(text) && !plan.teams.length) {
+      if (!lastFixtureId) throw new Error('กรุณาเลือกคู่จากรายการด้วยปุ่ม “ดูผลคู่นี้” หรือ “คาดการณ์ %” ก่อนครับ');
+      return { mode: plan.prediction ? 'prediction' : 'fixture', fixture: String(lastFixtureId) };
+    }
+    return { mode: 'fixtures', date: plan.date, teams: JSON.stringify(plan.teams), live: plan.live ? '1' : '0', finished: plan.finished ? '1' : '0', page: '1' };
+  }
+  async function fetchFootball(parameters) {
+    const controller = new AbortController();
+    footballAbort = controller;
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const url = new URL('/.netlify/functions/football', location.origin);
+      Object.entries(parameters).forEach(([key, value]) => url.searchParams.set(key, value));
+      const response = await fetch(url, { credentials: 'omit', signal: controller.signal, referrerPolicy: 'no-referrer' });
+      let payload;
+      try { payload = await response.json(); } catch { throw new Error('บริการสกอร์ยังไม่พร้อมบนเว็บไซต์นี้ครับ เจ้าของเว็บต้องอัปเดตส่วนบริการฟุตบอลก่อน'); }
+      if (!response.ok) throw new Error(payload.error?.message || 'บริการฟุตบอลขัดข้องชั่วคราวครับ');
+      return payload;
+    } catch (error) {
+      if (error.name === 'AbortError') throw new Error('การโหลดข้อมูลใช้เวลานาน กรุณาลองใหม่อีกครั้งครับ');
+      throw error;
+    } finally { clearTimeout(timer); if (footballAbort === controller) footballAbort = null; }
+  }
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  const statusText = { NS: 'ยังไม่เริ่ม', TBD: 'รอยืนยันเวลา', '1H': 'ครึ่งแรก', HT: 'พักครึ่ง', '2H': 'ครึ่งหลัง', ET: 'ต่อเวลา', BT: 'พักก่อนต่อเวลา', P: 'ยิงจุดโทษ', FT: 'จบเกม', AET: 'จบต่อเวลา', PEN: 'จบจุดโทษ', PST: 'เลื่อนแข่ง', CANC: 'ยกเลิก', SUSP: 'ระงับ', INT: 'หยุดชั่วคราว', ABD: 'ยุติการแข่งขัน', AWD: 'ตัดสินผล', WO: 'ชนะผ่าน', LIVE: 'กำลังแข่ง' };
+  function fixtureCard(fixture, showActions = true) {
+    const card = element('article', 'football-card');
+    const league = element('div', 'football-league', fixture.league.country + ' · ' + fixture.league.name);
+    const date = new Date(fixture.date);
+    const time = Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date) : 'ยังไม่ยืนยันเวลา';
+    const status = element('span', 'football-status', (statusText[fixture.status] || fixture.status) + (fixture.elapsed != null && !fixture.finished ? ` ${fixture.elapsed}′` : ''));
+    const scores = element('div', 'football-scoreline');
+    scores.append(element('strong', '', fixture.home.name));
+    const notStarted = ['NS', 'TBD', 'PST', 'CANC'].includes(fixture.status);
+    scores.append(element('b', 'football-score', notStarted ? 'VS' : `${fixture.goals.home ?? '–'} : ${fixture.goals.away ?? '–'}`));
+    scores.append(element('strong', '', fixture.away.name));
+    card.append(league, status, scores, element('small', 'football-kickoff', time + ' · เวลาไทย'));
+    if (fixture.penalties.home !== null && fixture.penalties.away !== null) card.append(element('small', 'football-penalties', `จุดโทษ ${fixture.penalties.home} : ${fixture.penalties.away}`));
+    if (showActions) {
+      const actions = element('div', 'football-card-actions');
+      const detail = element('button', '', 'ดูผลคู่นี้'); detail.type = 'button';
+      detail.addEventListener('click', () => { lastFixtureId = fixture.id; respond(`${fixture.home.name} vs ${fixture.away.name} — ดูผล`, null, { mode: 'fixture', fixture: String(fixture.id) }); });
+      actions.append(detail);
+      if (fixture.status === 'NS') {
+        const prediction = element('button', 'football-predict', 'คาดการณ์ %'); prediction.type = 'button';
+        prediction.addEventListener('click', () => { lastFixtureId = fixture.id; respond(`${fixture.home.name} vs ${fixture.away.name} — คาดการณ์`, null, { mode: 'prediction', fixture: String(fixture.id) }); });
+        actions.append(prediction);
+      }
+      card.append(actions);
+    }
+    return card;
+  }
+  function renderFootball(data, request) {
+    const block = element('div', 'football-results');
+    if (data.kind === 'fixtures') {
+      lastFixtureId = data.total === 1 ? data.fixtures[0]?.id : null;
+      if (!data.total) {
+        message('bot', `ไม่พบคู่ที่ตรงกับเงื่อนไขในข้อมูลผู้ให้บริการ${data.live ? 'ที่กำลังแข่ง' : ' วันที่ ' + data.date} ครับ ลองเปลี่ยนวันหรือใช้ชื่อทีมภาษาอังกฤษ เช่น Ajax vs PSV 2026-11-01 ทั้งนี้ไม่ได้หมายความว่าไม่มีการแข่งขันนอกความครอบคลุมของ API ครับ`);
+        return;
+      }
+      block.append(element('p', 'football-summary', `${data.live ? 'คู่ที่กำลังแข่ง' : 'โปรแกรม / ผล วันที่ ' + data.date} · พบ ${data.total} คู่ · หน้า ${data.page}`));
+      data.fixtures.forEach(fixture => block.append(fixtureCard(fixture)));
+      if (data.hasMore) {
+        const more = element('button', 'football-more', 'ดูคู่เพิ่มเติม →'); more.type = 'button';
+        more.addEventListener('click', () => respond('ดูคู่เพิ่มเติม', null, { ...request, page: String(data.page + 1) }));
+        block.append(more);
+      }
+    } else {
+      lastFixtureId = data.fixture.id;
+      block.append(fixtureCard(data.fixture, data.kind === 'fixture'));
+      if (data.kind === 'prediction') {
+        if (!data.available) block.append(element('p', 'football-note', data.reason));
+        else {
+          block.append(element('h3', 'football-prediction-title', 'โอกาสก่อนเริ่มแข่ง'));
+          const sides = [['home', data.fixture.home.name + ' ชนะ'], ['draw', 'เสมอ'], ['away', data.fixture.away.name + ' ชนะ']];
+          sides.forEach(([side, label]) => {
+            const row = element('div', 'football-probability football-' + side);
+            const line = element('div', 'football-probability-label');
+            line.append(element('span', '', label), element('b', '', data.percentages[side] + '%'));
+            const progress = element('progress', ''); progress.max = 100; progress.value = data.percentages[side]; progress.setAttribute('aria-label', label);
+            row.append(line, progress); block.append(row);
+          });
+          block.append(element('p', 'football-note', `สำหรับ ${data.fixture.home.name}: ชนะ ${data.percentages.home}% · เสมอ ${data.percentages.draw}% · แพ้ ${data.percentages.away}%`));
+          block.append(element('p', 'football-note', data.note));
+        }
+      }
+    }
+    const updated = new Date(data.fetchedAt);
+    const time = Number.isFinite(updated.getTime()) ? new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(updated) : 'ไม่ทราบเวลา';
+    block.append(element('small', 'football-source', `${data.source} · ดึงข้อมูล ${time} เวลาไทย\nครอบคลุมตามลีก/แพ็กเกจ อาจมีความล่าช้า`));
+    log.append(block); return block;
   }
   let answersLoaded = false;
   async function loadPublishedAnswers() {
