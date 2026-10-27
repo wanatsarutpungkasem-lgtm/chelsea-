@@ -136,3 +136,39 @@ test('provider timeouts and missing fixtures return meaningful errors', async ()
   const missing = await api.run({ mode: 'fixture', fixture: '101' });
   assert.equal(missing.response.status, 404);
 });
+
+test('Liverpool never activates live mode by substring', () => {
+  for (const text of ['liverpool เตะวันไหน', 'Liverpool วันนี้', 'chelsea เตะวันไหน', 'ลิเวอร์พูลเตะเมื่อไหร่']) {
+    const q = parseFootballQuestion(text, CLOCK);
+    assert.equal(q.live, false, text);
+  }
+  assert.equal(parseFootballQuestion('Liverpool live', CLOCK).live, true);
+  assert.equal(parseFootballQuestion('ลิเวอร์พูลกำลังแข่ง', CLOCK).live, true);
+});
+test('when questions use upcoming search but explicit dates stay date searches', () => {
+  assert.equal(parseFootballQuestion('Liverpool เตะวันไหน', CLOCK).upcoming, true);
+  assert.equal(parseFootballQuestion('Chelsea เตะเมื่อไหร่', CLOCK).upcoming, true);
+  assert.equal(parseFootballQuestion('Liverpool เตะวันไหน 2026-11-01', CLOCK).upcoming, false);
+  assert.equal(parseFootballQuestion('Liverpool วันนี้', CLOCK).upcoming, false);
+});
+test('Free upcoming search checks today and tomorrow, never paid-only next', async () => {
+  const api = mockProvider([fixture(101, 'NS', 'Liverpool', 'Test Away')]);
+  const {body, response} = await api.run({upcoming:'1', teams: JSON.stringify(['liverpool'])});
+  assert.equal(response.status, 200);
+  assert.equal(body.upcoming, true);
+  assert.match(body.scheduleNote, /Free/);
+  assert.equal(api.calls.length, 2);
+  assert.deepEqual(api.calls.map(c=>new URL(c.url).searchParams.get('date')), ['2026-10-28','2026-10-29']);
+  assert.equal(api.calls.some(c=>new URL(c.url).searchParams.has('next')), false);
+});
+test('upcoming search rejects missing teams and conflicting live mode', async () => {
+  const api = mockProvider([]);
+  assert.equal((await api.run({upcoming:'1'})).response.status, 400);
+  assert.equal((await api.run({upcoming:'1',live:'1',teams:'["liverpool"]'})).response.status, 400);
+  assert.equal(api.calls.length,0);
+});
+test('Free date restrictions are explained instead of reported as an empty schedule', async () => {
+  const handler = createFootballHandler({getKey:()=> 'test-only', fetcher:async()=>Response.json({errors:{plan:'Free plans do not have access to this date, try from 2026-10-26 to 2026-10-28.'},response:[]})});
+  const response=await handler(new Request('https://test.invalid/?date=2026-11-01'));
+  assert.equal((await response.json()).error.code,'PROVIDER_DATE_COVERAGE');
+});

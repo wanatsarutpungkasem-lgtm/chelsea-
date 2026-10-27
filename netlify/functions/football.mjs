@@ -64,6 +64,7 @@ export function createFootballHandler({
     if (data.errors && Object.keys(data.errors).length) {
       const reason = JSON.stringify(data.errors).toLowerCase();
       if (/limit|quota|rate/.test(reason)) fail(429, 'PROVIDER_QUOTA', 'โควตาข้อมูลฟุตบอลถึงขีดจำกัดแล้ว กรุณาลองใหม่ภายหลังครับ');
+      if (/free.*date/.test(reason)) fail(503, 'PROVIDER_DATE_COVERAGE', 'แพ็กเกจ Free ค้นหาวันนี้ เมื่อวาน และพรุ่งนี้ได้เท่านั้นครับ วันที่ไกลกว่านี้ต้องใช้แพ็กเกจที่รองรับ');
       if (/plan|subscription|season|access|token|key/.test(reason)) fail(503, 'PROVIDER_COVERAGE', 'แพ็กเกจหรือสิทธิ์ API ยังไม่รองรับข้อมูลนี้ เจ้าของเว็บต้องตรวจการตั้งค่าครับ');
       fail(502, 'PROVIDER_RESPONSE', 'ผู้ให้บริการยังไม่สามารถส่งข้อมูลตามคำขอนี้ได้ครับ');
     }
@@ -79,7 +80,7 @@ export function createFootballHandler({
     return Response.json(value, { status, headers: {
       'Cache-Control': 'no-store',
       'Netlify-CDN-Cache-Control': ttl ? `public, durable, max-age=${ttl}` : 'no-store',
-      'Netlify-Vary': 'query=mode|date|teams|live|finished|page|fixture',
+      'Netlify-Vary': 'query=mode|date|teams|live|finished|page|fixture|upcoming',
       'X-Content-Type-Options': 'nosniff'
     } });
   }
@@ -100,12 +101,24 @@ export function createFootballHandler({
         try { teams = JSON.parse(p.get('teams') || '[]'); } catch { fail(400, 'INVALID_TEAMS', 'รายชื่อทีมไม่ถูกต้องครับ'); }
         if (!Array.isArray(teams) || teams.length > 2 || teams.some(t => typeof t !== 'string' || !t.trim() || t.length > 80)) fail(400, 'INVALID_TEAMS', 'ค้นหาได้ครั้งละไม่เกินสองทีมครับ');
         const live = p.get('live') === '1';
-        const fetched = await provider('/fixtures', live ? { live: 'all', timezone: TIMEZONE } : { date, timezone: TIMEZONE });
+        const upcoming = p.get('upcoming') === '1';
+        if (upcoming && (!teams.length || live || p.get('finished') === '1')) fail(400, 'INVALID_UPCOMING', 'กรุณาระบุทีมเพื่อดูนัดถัดไป แยกจากการค้นหาสดหรือผลย้อนหลังครับ');
+        let parameters = live ? { live: 'all', timezone: TIMEZONE } : { date, timezone: TIMEZONE };
+        // The current Free subscription supports yesterday/today/tomorrow only.
+        // Never call paid-only `next`, or imply this limited window is a full schedule.
+        let fetched;
+        if (upcoming) {
+          const today = await provider('/fixtures', {date: bangkokDate(now()), timezone: TIMEZONE});
+          const tomorrow = await provider('/fixtures', {date: bangkokDate(now(), 1), timezone: TIMEZONE});
+          fetched = {rows: [...today.rows, ...tomorrow.rows], fetchedAt: [today.fetchedAt, tomorrow.fetchedAt].sort()[0]};
+        } else fetched = await provider('/fixtures', parameters);
         const normalizedTeams = teams.map(normalize);
         let fixtures = fetched.rows.map(mapFixture).filter(f => normalizedTeams.every(t => normalize(`${f.home.name} ${f.away.name}`).includes(t)));
+        if (upcoming) fixtures = fixtures.filter(f => ['NS', 'TBD'].includes(f.status) && new Date(f.date).getTime() > now().getTime());
         if (p.get('finished') === '1') fixtures = fixtures.filter(f => f.finished);
         fixtures.sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
-        return json({ ...base, kind: 'fixtures', date, live, fetchedAt: fetched.fetchedAt,
+        return json({ ...base, kind: 'fixtures', date, live, upcoming, fetchedAt: fetched.fetchedAt,
+          scheduleNote: upcoming ? 'ค้นเฉพาะวันนี้และพรุ่งนี้ตามแพ็กเกจ Free ไม่ใช่ตารางนัดถัดไปทั้งหมด หากไม่พบ อาจแข่งหลังจากช่วงนี้ การค้นหาล่วงหน้าหลายวันต้องใช้แพ็กเกจที่รองรับ' : null,
           total: fixtures.length, page, pageSize: PAGE_SIZE,
           hasMore: page * PAGE_SIZE < fixtures.length,
           fixtures: fixtures.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)

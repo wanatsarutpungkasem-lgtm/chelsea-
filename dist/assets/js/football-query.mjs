@@ -41,9 +41,13 @@ export function parseFootballQuestion(text, now = new Date()) {
     teams.push(...clean.split(/\s+(?:vs\.?|v\.?|พบ|เจอ|ปะทะ)\s+/iu).map(normalize).filter(Boolean).slice(0, 2));
   }
   const sport = /(ผลบอล|สกอร์|โปรแกรมบอล|ตารางบอล|บอลวันนี้|บอลพรุ่งนี้|บอลเมื่อวาน|บอลสด|คู่ไหน|ใครเตะ|ใครแข่ง|มีบอล|แข่ง.*บ้าง|เตะ.*บ้าง|เกมคู่|คู่นี้|เกมนี้|แข่งขัน|แข่งวัน|คาดการณ์|วิเคราะห์บอล|ใครชนะ|ชนะ.*ไหม|โอกาส.*ชนะ|ชนะ.*กี่|เปอร์เซ็นต์|fixture|score|prediction|live|\svs\s|\sv\.\s)/iu.test(q) || teams.length > 0;
+  // "live" must be a whole word: Liverpool is a club, not a live-score command.
+  const live = /บอลสด|กำลังแข่ง|\blive\b/iu.test(q);
+  const dated = Boolean(iso || slash || /วันนี้|คืนนี้|พรุ่งนี้|เมื่อวาน|เมื่อคืน|\b(?:today|tonight|tomorrow|yesterday)\b/iu.test(q));
+  const upcoming = teams.length > 0 && !dated && !live && /เตะวันไหน|แข่งวันไหน|เตะเมื่อไหร่|แข่งเมื่อไหร่|นัดหน้า|นัดถัดไป|ครั้งต่อไป|\bnext\b|\bwhen\b/iu.test(q);
   return {
-    sport, date, valid: validDate(date), teams,
-    live: /(บอลสด|กำลังแข่ง|live)/iu.test(q),
+    sport, date, valid: validDate(date), teams, upcoming,
+    live,
     prediction: /(คาดการณ์|วิเคราะห์|โอกาส|เปอร์เซ็นต์|ใครชนะ|ชนะ.*ไหม|prediction|predict|%)/iu.test(q),
     finished: /(จบ|ผลบอลเมื่อวาน|ผลเมื่อคืน|finished)/iu.test(q)
   };
