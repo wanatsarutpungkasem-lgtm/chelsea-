@@ -4,3 +4,9 @@
 @media(max-width:600px){.site-header .brand{font-size:13px}.site-header .brand small{font-size:8px}.site-header .menu-toggle{padding:9px 10px;font-size:12px;gap:8px}.site-header .nav{gap:9px}.page-intro{padding-top:24px;padding-bottom:30px}.breadcrumb{margin-bottom:32px}.page-intro h1{font-size:39px}.page-intro p{font-size:14px}.explore-grid{grid-template-columns:1fr;gap:20px}.explore-image img{height:240px}.explore-copy{padding:25px}.explore-copy p{min-height:0}.about-portrait{float:none;width:min(100%,310px);margin:22px auto 36px}.about-portrait img{height:330px}.gallery-toolbar{align-items:flex-start;flex-direction:column;gap:8px}.gallery-toolbar p{margin:0}.gallery-toolbar label{width:100%;justify-content:space-between}.photo-dialog{padding:14px}.photo-full{height:54dvh}.page-pager a{font-size:15px}.page-pager{padding-top:30px;padding-bottom:38px}.page-tabs .button{padding:14px 18px}}
 @media(prefers-reduced-motion:reduce){.explore-image img,.explore-card{transition:none}}
 @media(max-width:600px){.site-header .nav-chat-button{width:48px;min-width:48px;height:45px;padding:5px;justify-content:center;gap:0}.site-header .chat-launcher-copy,.site-header .chat-ready-dot{display:none}.site-header .nav-chat-button .robot3d{width:32px;height:32px}.site-header .brand small{letter-spacing:1px}}
+/* The homepage ends at the hero, matching the requested single-screen layout. */
+.home-single .hero{min-height:calc(100svh - 88px);display:flex;flex-direction:column;padding-top:clamp(30px,6vh,68px)}
+.home-single .hero-grid{flex:1;min-height:0;align-items:center;padding-bottom:28px}
+.home-single .hero-bottom{margin-top:auto}
+@media(min-width:801px){.home-single .hero-photo{height:min(470px,58svh)}}
+@media(max-width:800px){.home-single .hero{min-height:calc(100svh - 88px)}.home-single .hero-grid{display:grid;padding-bottom:16px}}
