@@ -208,3 +208,26 @@ test('upcoming all-team results contain only unstarted fixtures across both date
   assert.ok(body.fixtures.length>0);
   assert.equal(body.fixtures.every(f=>['NS','TBD'].includes(f.status)),true);
 });
+
+test('Al Taee Thai spellings and playing-today questions resolve to the provider team', () => {
+  for(const text of ['คู่ อัล ทาอิ เตะไหม','อัลทาอิเตะมั้ย','อัล ทาอี วันนี้','Al Tai เตะไหม','Al Taee เตะไหม']) {
+    const p=parseFootballQuestion(text,CLOCK);
+    assert.deepEqual(p.teams,['al taee'],text);
+    assert.equal(p.sport,true,text);
+    assert.equal(p.upcoming,false,text);
+    assert.equal(p.scheduled,false,text);
+    assert.equal(p.live,false,text);
+    assert.equal(p.finished,false,text);
+  }
+  assert.equal(parseFootballQuestion('อัล ทาอิ เตะวันไหน',CLOCK).upcoming,true);
+  assert.equal(parseFootballQuestion('อัล ทาอิ กำลังจะเตะ',CLOCK).scheduled,true);
+});
+test('playing-today searches do not hide a live or finished Al Taee game', async () => {
+  for(const status of ['NS','2H','FT']) {
+    const api=mockProvider([fixture(101,status,'Al Taee','Jeddah Club')]);
+    const p=parseFootballQuestion('คู่ อัล ทาอิ เตะไหม',CLOCK);
+    const {body}=await api.run({date:p.date,teams:JSON.stringify(p.teams),scheduled:p.scheduled?'1':'0',upcoming:p.upcoming?'1':'0'});
+    assert.equal(body.total,1,status);
+    assert.equal(body.fixtures[0].status,status);
+  }
+});

@@ -22,7 +22,9 @@ const aliases = [
   ['barcelona', /บาร์เซโลนา|บาร์เซโลน่า|barcelona/iu], ['real madrid', /เรอัล มาดริด|real madrid/iu],
   ['bayern', /บาเยิร์น|bayern/iu], ['juventus', /ยูเวนตุส|juventus/iu],
   ['paris saint germain', /ปารีส|เปแอสเช|paris saint germain|psg/iu],
-  ['buriram', /บุรีรัมย์|buriram/iu], ['muangthong', /เมืองทอง|muangthong/iu]
+  ['buriram', /บุรีรัมย์|buriram/iu], ['muangthong', /เมืองทอง|muangthong/iu],
+  ['al taee', /อัล\s*ทา(?:อิ|อี|อี้|ย)|อัล\s*ตา(?:อิ|อี|อี้|ย)|\bal[ -]*(?:taee|taei|tai|taie)\b/iu],
+  ['jeddah club', /เจดดาห์|เจดดะห์|เจดดา|\bjeddah(?: club)?\b/iu]
 ];
 export function parseFootballQuestion(text, now = new Date()) {
   const q = text.trim();
@@ -52,7 +54,9 @@ export function parseFootballQuestion(text, now = new Date()) {
   const live = !pending && !finished && /บอลสด|กำลังแข่ง|\blive\b/iu.test(q);
   const dated = Boolean(iso || slash || /วันนี้|คืนนี้|พรุ่งนี้|เมื่อวาน|เมื่อคืน|\b(?:today|tonight|tomorrow|yesterday)\b/iu.test(q));
   const prediction = /(คาดการณ์|วิเคราะห์|โอกาส|เปอร์เซ็นต์|ใครชนะ|ชนะ.*ไหม|prediction|predict|%)/iu.test(q);
-  const upcoming = !dated && !live && !finished && (pending || (teams.length > 0 && !prediction));
+  // "เตะไหม" asks whether a game exists today, including live/finished games.
+  const playingToday = /(?:เตะ|แข่ง|แข่งขัน|มีแข่ง)\s*(?:ไหม|มั้ย|หรือเปล่า|หรือไม่)/iu.test(q);
+  const upcoming = !dated && !live && !finished && !playingToday && (pending || (teams.length > 0 && !prediction));
   return {
     sport: sport || pending || finished, date, valid: validDate(date), teams, upcoming,
     scheduled: !finished && (pending || upcoming), live, prediction, finished

@@ -174,7 +174,7 @@
   }
   async function footballRequest(text, selectedTopic, faqTopic) {
     if (selectedTopic && !selectedTopic.startsWith('football-')) return null;
-    const strong = /(ผลบอล|สกอร์|โปรแกรมบอล|บอลวันนี้|บอลสด|บอลเมื่อวาน|(?:เตะ|แข่ง).*(?:วันไหน|เมื่อไหร่)|นัดหน้า|นัดถัดไป|\bnext\b|\bwhen\b|ใคร.*(?:ชนะ|เตะ|แข่ง)|มีบอล|โอกาส.*ชนะ|คาดการณ์|เปอร์เซ็นต์|\svs\s)/iu.test(text);
+    const strong = /(ผลบอล|สกอร์|โปรแกรมบอล|บอลวันนี้|บอลสด|บอลเมื่อวาน|(?:เตะ|แข่ง).*(?:วันไหน|เมื่อไหร่|ไหม|มั้ย|หรือเปล่า|หรือไม่)|นัดหน้า|นัดถัดไป|\bnext\b|\bwhen\b|ใคร.*(?:ชนะ|เตะ|แข่ง)|มีบอล|โอกาส.*ชนะ|คาดการณ์|เปอร์เซ็นต์|\svs\s)/iu.test(text);
     if (faqTopic && !selectedTopic?.startsWith('football-') && !strong) return null;
     const mod = await footballModule;
     const presets = { 'football-today': 'บอลวันนี้', 'football-upcoming': 'ฟุตบอลกำลังจะเตะ', 'football-finished': 'ฟุตบอลแข่งจบแล้ว', 'football-live': 'บอลสด', 'football-yesterday': 'ผลบอลเมื่อวาน', 'football-prediction': 'คาดการณ์บอลวันนี้' };
