@@ -1,0 +1,19 @@
+.contact-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.contact .contact-links { margin-top: 28px; }
+.contact .contact-links .button { margin-top: 0; }
+.button-tiktok { background: #101010; border: 1px solid #ffffff50; }
+.button-tiktok:hover { background: #262626; border-color: #69c9d0; }
+.dashboard-social .contact-links { flex-shrink: 0; }
+@media (max-width: 1000px) {
+  .dashboard-social { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 500px) {
+  .contact .contact-links { flex-direction: column; }
+  .contact .contact-links .button { width: 100%; max-width: 320px; justify-content: space-between; }
+}

@@ -1,0 +1,58 @@
+/* Open-source font pairing inspired by the broad, bold type on Chelsea's site.
+   Chelsea Basis is not bundled. Update these variables to change all pages. */
+:root {
+  --font-ui: 'DM Sans', 'Anuphan', sans-serif;
+  --font-thai: 'Anuphan', 'DM Sans', sans-serif;
+}
+body { font-family: var(--font-ui); }
+h1, h2, h3, .brand { font-family: var(--font-ui); font-weight: 700; }
+h1 { letter-spacing: -1.8px; line-height: 1.16; }
+h2 { letter-spacing: -.8px; line-height: 1.35; }
+.hero h1 { font-size: clamp(48px, 5.8vw, 76px); }
+.brand { font-size: 17px; letter-spacing: -.3px; }
+.brand small { font-size: 9px; letter-spacing: 1.5px; }
+.navlinks { font-weight: 700; gap: 22px; }
+.nav-social { font-size: 11px; font-weight: 700; letter-spacing: .4px; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+.button { font-weight: 700; }
+.intro, .about-copy, .dream p, .contact p { font-size: 15px; line-height: 1.9; }
+.hero-bottom b { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; }
+.ticket { font-size: 10px; letter-spacing: 1px; }
+.ticket span { font-size: 17px; font-weight: 700; }
+.art-label { font-size: 9px; letter-spacing: 1px; }
+.strip-inner { font-size: 14px; font-weight: 700; letter-spacing: 1px; }
+.stats strong { font-size: 50px; font-weight: 800; letter-spacing: -2px; }
+.player:before { font-size: 225px; font-weight: 800; letter-spacing: -12px; }
+.player .role { font-size: 10px; letter-spacing: 1.2px; }
+.player h3 { font-size: clamp(25px, 3vw, 37px); line-height: 1.02; font-weight: 800; letter-spacing: -1.2px; }
+.coach { font-size: 18px; font-weight: 700; letter-spacing: -.5px; }
+.ticket-top { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.ticket-main strong { font-size: 39px; font-weight: 800; letter-spacing: -1.5px; }
+.ticket-main small { font-size: 9px; letter-spacing: 1px; }
+.gallery-item figcaption span { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.gallery-item h3 { font-weight: 700; }
+.dashboard-heading h1 { font-size: clamp(42px, 6vw, 68px); font-weight: 800; letter-spacing: -2px; }
+.dashboard-stats strong { font-size: 56px; font-weight: 800; letter-spacing: -2px; }
+.dashboard-stats small { letter-spacing: 0; }
+.dream-summary h2 { font-size: clamp(30px, 3.8vw, 45px); font-weight: 800; letter-spacing: -1.6px; }
+@media (max-width: 1000px) {
+  .navlinks { gap: 13px; font-size: 12px; }
+  .nav-social { padding: 12px; }
+}
+@media (max-width: 800px) {
+  .hero h1 { font-size: 58px; }
+  .coach { font-size: 17px; }
+  .ticket-main strong { font-size: 32px; }
+}
+@media (max-width: 500px) {
+  .brand { font-size: 14px; }
+  .brand small { font-size: 8px; }
+  .navlinks { gap: 10px; font-size: 11px; }
+  .hero h1 { font-size: 50px; }
+  .hero .eyebrow { font-size: 9px; letter-spacing: 1.2px; }
+  .strip-inner { font-size: 12px; }
+  .player h3 { font-size: 35px; }
+  .player:before { font-size: 220px; }
+  .ticket-main strong { font-size: 39px; }
+  .dashboard-heading h1 { font-size: 44px; }
+}
