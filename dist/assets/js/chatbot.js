@@ -81,7 +81,7 @@
   const quickTopics = [
     ['about-om', 'รู้จักโอห์ม'], ['favorite-players', 'นักเตะที่ชอบ'],
     ['favorite-coaches', 'โค้ชที่ชอบ'], ['stamford-dream', 'ความฝันของโอห์ม'],
-    ['contact-om', 'ช่องทางติดต่อ'], ['football-today', '⚽ บอลวันนี้'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
+    ['contact-om', 'ช่องทางติดต่อ'], ['football-today', '⚽ บอลวันนี้'], ['football-upcoming', 'คู่ยังไม่เริ่ม'], ['football-finished', 'คู่จบแล้ว'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
   ];
   function showQuickReplies(autoScroll = true) {
     log.querySelector('.chat-quick-replies')?.remove();
@@ -177,7 +177,7 @@
     const strong = /(ผลบอล|สกอร์|โปรแกรมบอล|บอลวันนี้|บอลสด|บอลเมื่อวาน|(?:เตะ|แข่ง).*(?:วันไหน|เมื่อไหร่)|นัดหน้า|นัดถัดไป|\bnext\b|\bwhen\b|ใคร.*(?:ชนะ|เตะ|แข่ง)|มีบอล|โอกาส.*ชนะ|คาดการณ์|เปอร์เซ็นต์|\svs\s)/iu.test(text);
     if (faqTopic && !selectedTopic?.startsWith('football-') && !strong) return null;
     const mod = await footballModule;
-    const presets = { 'football-today': 'บอลวันนี้', 'football-live': 'บอลสด', 'football-yesterday': 'ผลบอลเมื่อวาน', 'football-prediction': 'คาดการณ์บอลวันนี้' };
+    const presets = { 'football-today': 'บอลวันนี้', 'football-upcoming': 'ฟุตบอลกำลังจะเตะ', 'football-finished': 'ฟุตบอลแข่งจบแล้ว', 'football-live': 'บอลสด', 'football-yesterday': 'ผลบอลเมื่อวาน', 'football-prediction': 'คาดการณ์บอลวันนี้' };
     const plan = mod.parseFootballQuestion(presets[selectedTopic] || text);
     if (!plan.sport) return null;
     if (!plan.valid) throw new Error('วันที่ไม่ถูกต้องครับ ลองระบุ YYYY-MM-DD เช่น 2026-11-01');
@@ -185,7 +185,7 @@
       if (!lastFixtureId) throw new Error('กรุณาเลือกคู่จากรายการด้วยปุ่ม “ดูผลคู่นี้” หรือ “คาดการณ์ %” ก่อนครับ');
       return { mode: plan.prediction ? 'prediction' : 'fixture', fixture: String(lastFixtureId) };
     }
-    return { mode: 'fixtures', date: plan.date, upcoming: plan.upcoming ? '1' : '0', teams: JSON.stringify(plan.teams), live: plan.live ? '1' : '0', finished: plan.finished ? '1' : '0', page: '1' };
+    return { mode: 'fixtures', date: plan.date, upcoming: plan.upcoming ? '1' : '0', scheduled: plan.scheduled ? '1' : '0', teams: JSON.stringify(plan.teams), live: plan.live ? '1' : '0', finished: plan.finished ? '1' : '0', page: '1' };
   }
   async function fetchFootball(parameters) {
     const controller = new AbortController();
@@ -215,7 +215,7 @@
     const card = element('article', 'football-card');
     const league = element('div', 'football-league', fixture.league.country + ' · ' + fixture.league.name);
     const date = new Date(fixture.date);
-    const time = Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date) : 'ยังไม่ยืนยันเวลา';
+    const time = Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date) : 'ยังไม่ยืนยันเวลา';
     const status = element('span', 'football-status', (statusText[fixture.status] || fixture.status) + (fixture.elapsed != null && !fixture.finished ? ` ${fixture.elapsed}′` : ''));
     const scores = element('div', 'football-scoreline');
     scores.append(element('strong', '', fixture.home.name));
@@ -243,10 +243,10 @@
     if (data.kind === 'fixtures') {
       lastFixtureId = data.total === 1 ? data.fixtures[0]?.id : null;
       if (!data.total) {
-        message('bot', data.upcoming ? 'ไม่พบโปรแกรมของทีมนี้ในช่วงวันนี้และพรุ่งนี้ครับ แพ็กเกจ Free ยังดูนัดที่ไกลกว่านี้ไม่ได้ จึงยังบอกวันเตะนัดถัดไปไม่ได้ และไม่ได้หมายความว่าทีมไม่มีแข่งครับ' : `ไม่พบคู่ที่ตรงกับเงื่อนไขในข้อมูลผู้ให้บริการ${data.live ? 'ที่กำลังแข่ง' : ' วันที่ ' + data.date} ครับ ลองถาม “Liverpool เตะวันไหน” เพื่อค้นโปรแกรมวันนี้และพรุ่งนี้ ทั้งนี้ไม่ได้หมายความว่าไม่มีการแข่งขันนอกความครอบคลุมของ API ครับ`);
+        message('bot', data.upcoming ? 'ไม่พบคู่ที่ยังไม่เริ่มตามคำค้นในช่วงวันนี้และพรุ่งนี้ครับ แพ็กเกจ Free ยังดูนัดที่ไกลกว่านี้ไม่ได้ จึงยังบอกวันเตะนัดถัดไปนอกช่วงนี้ไม่ได้ และไม่ได้หมายความว่าไม่มีแข่งครับ' : `ไม่พบคู่${data.finished ? 'ที่จบแล้ว' : data.scheduled ? 'ที่ยังไม่เริ่ม' : data.live ? 'ที่กำลังแข่ง' : ''}ตามคำค้น วันที่ ${data.date} ในข้อมูลผู้ให้บริการครับ ลองระบุทีม หรือเปลี่ยนวันภายในช่วงที่แพ็กเกจรองรับได้ครับ`);
         return;
       }
-      block.append(element('p', 'football-summary', `${data.upcoming ? 'โปรแกรมวันนี้และพรุ่งนี้' : data.live ? 'คู่ที่กำลังแข่ง' : 'โปรแกรม / ผล วันที่ ' + data.date} · พบ ${data.total} คู่ · หน้า ${data.page}`));
+      block.append(element('p', 'football-summary', `${data.upcoming ? 'คู่ยังไม่เริ่ม · วันนี้และพรุ่งนี้' : data.live ? 'คู่ที่กำลังแข่ง' : `${data.finished ? 'คู่ที่จบแล้ว' : data.scheduled ? 'คู่ที่ยังไม่เริ่ม' : 'โปรแกรม / ผล'} วันที่ ${data.date}`} · พบ ${data.total} คู่ · หน้า ${data.page}`));
       if (data.scheduleNote) block.append(element('p', 'football-note', data.scheduleNote));
       data.fixtures.forEach(fixture => block.append(fixtureCard(fixture)));
       if (data.hasMore) {

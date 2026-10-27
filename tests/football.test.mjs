@@ -161,14 +161,50 @@ test('Free upcoming search checks today and tomorrow, never paid-only next', asy
   assert.deepEqual(api.calls.map(c=>new URL(c.url).searchParams.get('date')), ['2026-10-28','2026-10-29']);
   assert.equal(api.calls.some(c=>new URL(c.url).searchParams.has('next')), false);
 });
-test('upcoming search rejects missing teams and conflicting live mode', async () => {
+test('upcoming search supports all teams but rejects conflicting live mode', async () => {
   const api = mockProvider([]);
-  assert.equal((await api.run({upcoming:'1'})).response.status, 400);
   assert.equal((await api.run({upcoming:'1',live:'1',teams:'["liverpool"]'})).response.status, 400);
   assert.equal(api.calls.length,0);
+  assert.equal((await api.run({upcoming:'1'})).response.status, 200);
 });
 test('Free date restrictions are explained instead of reported as an empty schedule', async () => {
   const handler = createFootballHandler({getKey:()=> 'test-only', fetcher:async()=>Response.json({errors:{plan:'Free plans do not have access to this date, try from 2026-10-26 to 2026-10-28.'},response:[]})});
   const response=await handler(new Request('https://test.invalid/?date=2026-11-01'));
   assert.equal((await response.json()).error.code,'PROVIDER_DATE_COVERAGE');
+});
+
+test('Thai pending and completed phrases select separate statuses', () => {
+  for(const text of ['ฟุตบอลกำลังจะแข่งขัน','ฟุตบอลกำลังจะเตะ','คู่ที่ยังไม่เตะ']) {
+    const p=parseFootballQuestion(text,CLOCK);
+    assert.equal(p.sport,true,text); assert.equal(p.scheduled,true,text);
+    assert.equal(p.upcoming,true,text); assert.equal(p.live,false,text); assert.equal(p.finished,false,text);
+  }
+  for(const text of ['ฟุตบอลที่แข่งจบแล้ว','ฟุตบอลเสร็จแล้ว','คู่ที่เตะแล้ว','ฟุตบอลแข่งเสร็จแล้ว']) {
+    const p=parseFootballQuestion(text,CLOCK);
+    assert.equal(p.finished,true,text); assert.equal(p.live,false,text); assert.equal(p.upcoming,false,text);
+  }
+});
+test('bare club names request schedules and dated requests keep their day', () => {
+  for(const text of ['Liverpool','chelsea','ลิเวอร์พูล','เชลซี','Ajax','Everton เตะวันไหน']) {
+    const p=parseFootballQuestion(text,CLOCK);
+    assert.equal(p.teams.length,1,text); assert.equal(p.upcoming,true,text); assert.equal(p.scheduled,true,text);
+  }
+  assert.equal(parseFootballQuestion('ฟุตบอลกำลังจะเตะพรุ่งนี้',CLOCK).upcoming,false);
+  assert.equal(parseFootballQuestion('ฟุตบอลกำลังจะเตะพรุ่งนี้',CLOCK).scheduled,true);
+  assert.equal(parseFootballQuestion('Liverpool แข่งจบแล้ว',CLOCK).finished,true);
+});
+test('scheduled lists exclude live, completed, postponed and cancelled fixtures', async () => {
+  const api=mockProvider(['NS','TBD','1H','HT','FT','PEN','PST','CANC'].map((s,i)=>fixture(i+1,s)));
+  const {body}=await api.run({scheduled:'1',date:'2026-10-28'});
+  assert.deepEqual(body.fixtures.map(f=>f.status),['NS','TBD']);
+  assert.equal(body.scheduled,true);
+  const finished=await api.run({finished:'1',date:'2026-10-28'});
+  assert.deepEqual(finished.body.fixtures.map(f=>f.status),['FT','PEN']);
+  assert.equal(finished.body.finished,true);
+});
+test('upcoming all-team results contain only unstarted fixtures across both dates', async () => {
+  const api=mockProvider([fixture(1,'NS'),fixture(2,'FT'),fixture(3,'2H')]);
+  const {body}=await api.run({upcoming:'1'});
+  assert.ok(body.fixtures.length>0);
+  assert.equal(body.fixtures.every(f=>['NS','TBD'].includes(f.status)),true);
 });

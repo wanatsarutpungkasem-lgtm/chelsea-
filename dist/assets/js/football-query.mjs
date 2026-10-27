@@ -40,15 +40,21 @@ export function parseFootballQuestion(text, now = new Date()) {
       .replace(/คาดการณ์|วิเคราะห์|ผลบอล|สกอร์|บอล|วันนี้|พรุ่งนี้|เมื่อวาน|ใครชนะ|จบเท่าไหร่|prediction|predict|score|today|tomorrow|yesterday/giu, '').trim();
     teams.push(...clean.split(/\s+(?:vs\.?|v\.?|พบ|เจอ|ปะทะ)\s+/iu).map(normalize).filter(Boolean).slice(0, 2));
   }
+  if (!teams.length) {
+    const englishName = q.replace(/\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\/\d{1,2}\/\d{4}\b/g, '')
+      .replace(/[^a-zA-Z .'-]/g, ' ').replace(/\b(?:when|does|do|play|plays|next|match|matches|fixture|fixtures|football|soccer|today|tonight|tomorrow|yesterday|live|score|finished|completed|upcoming|scheduled|prediction|predict|percent)\b/gi, '').trim();
+    if (/^[a-zA-Z][a-zA-Z .'-]{1,60}$/.test(englishName) && !/^(hello|hi|thanks|thank you|bot)$/i.test(englishName)) teams.push(normalize(englishName));
+  }
   const sport = /(ผลบอล|สกอร์|โปรแกรมบอล|ตารางบอล|บอลวันนี้|บอลพรุ่งนี้|บอลเมื่อวาน|บอลสด|คู่ไหน|ใครเตะ|ใครแข่ง|มีบอล|แข่ง.*บ้าง|เตะ.*บ้าง|เกมคู่|คู่นี้|เกมนี้|แข่งขัน|แข่งวัน|คาดการณ์|วิเคราะห์บอล|ใครชนะ|ชนะ.*ไหม|โอกาส.*ชนะ|ชนะ.*กี่|เปอร์เซ็นต์|fixture|score|prediction|live|\svs\s|\sv\.\s)/iu.test(q) || teams.length > 0;
   // "live" must be a whole word: Liverpool is a club, not a live-score command.
-  const live = /บอลสด|กำลังแข่ง|\blive\b/iu.test(q);
+  const finished = /แข่งจบ|จบแล้ว|เสร็จแล้ว|แข่งเสร็จ|เตะแล้ว|เตะจบ|จบเท่าไหร่|ผลบอลเมื่อวาน|ผลเมื่อคืน|\bfinished\b|\bcompleted\b/iu.test(q);
+  const pending = /กำลังจะ(?:แข่งขัน|แข่ง|เตะ)|ยังไม่(?:เตะ|แข่ง|เริ่ม)|ก่อน(?:เตะ|แข่ง)|\bupcoming\b|\bscheduled\b/iu.test(q);
+  const live = !pending && !finished && /บอลสด|กำลังแข่ง|\blive\b/iu.test(q);
   const dated = Boolean(iso || slash || /วันนี้|คืนนี้|พรุ่งนี้|เมื่อวาน|เมื่อคืน|\b(?:today|tonight|tomorrow|yesterday)\b/iu.test(q));
-  const upcoming = teams.length > 0 && !dated && !live && /เตะวันไหน|แข่งวันไหน|เตะเมื่อไหร่|แข่งเมื่อไหร่|นัดหน้า|นัดถัดไป|ครั้งต่อไป|\bnext\b|\bwhen\b/iu.test(q);
+  const prediction = /(คาดการณ์|วิเคราะห์|โอกาส|เปอร์เซ็นต์|ใครชนะ|ชนะ.*ไหม|prediction|predict|%)/iu.test(q);
+  const upcoming = !dated && !live && !finished && (pending || (teams.length > 0 && !prediction));
   return {
-    sport, date, valid: validDate(date), teams, upcoming,
-    live,
-    prediction: /(คาดการณ์|วิเคราะห์|โอกาส|เปอร์เซ็นต์|ใครชนะ|ชนะ.*ไหม|prediction|predict|%)/iu.test(q),
-    finished: /(จบ|ผลบอลเมื่อวาน|ผลเมื่อคืน|finished)/iu.test(q)
+    sport: sport || pending || finished, date, valid: validDate(date), teams, upcoming,
+    scheduled: !finished && (pending || upcoming), live, prediction, finished
   };
 }
