@@ -13,6 +13,11 @@ update public.journal_entries set content=jsonb_set(content,'{body}','"Private d
 do $$ begin
  if (select content->>'body' from public.journal_publications where id='journal-qa-entry')<>'Private draft A' then raise exception 'draft edit leaked into publication';end if;
  if (select version from public.journal_entries where id='journal-qa-entry')<>2 then raise exception 'version did not increment';end if;
+ begin
+  insert into public.journal_entries(id,content) select batch.id,entry.content||jsonb_build_object('id',batch.id) from public.journal_entries entry cross join (values ('journal-qa-atomic-new'),('journal-qa-entry')) as batch(id) where entry.id='journal-qa-entry';
+  raise exception 'duplicate batch unexpectedly accepted';
+ exception when unique_violation then null;end;
+ if exists(select 1 from public.journal_entries where id='journal-qa-atomic-new') then raise exception 'failed batch was partially saved';end if;
 end;$$;
 reset role;
 select set_config('request.jwt.claims','{"sub":"f86a1144-790d-41e7-b395-b033e4971685","role":"authenticated"}',true);
@@ -41,5 +46,5 @@ do $$ begin if (select content->>'body' from public.journal_publications where i
 delete from public.journal_publications where id='journal-qa-entry';
 do $$ begin if not exists(select 1 from public.journal_entries where id='journal-qa-entry') then raise exception 'unpublish deleted private draft';end if;end;$$;
 reset role;
-select json_build_object('result','PASS','checks',array['owner claim','private draft isolation','public snapshot isolation','version increment','outsider blocked','anon writes blocked','server snapshot source','unpublish preserves draft']);
+select json_build_object('result','PASS','checks',array['owner claim','private draft isolation','public snapshot isolation','version increment','outsider blocked','anon writes blocked','server snapshot source','unpublish preserves draft','atomic import rollback']);
 rollback;
