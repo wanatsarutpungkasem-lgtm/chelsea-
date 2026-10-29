@@ -130,3 +130,11 @@ html.motion-off::view-transition-old(root),html.motion-off::view-transition-new(
 /* Keep the motion preference with navigation rather than covering page content. */
 .dropdown-panel .motion-toggle{position:relative;inset:auto;display:block;width:100%;max-width:none;margin-top:6px;text-align:left;border-radius:6px;font-size:12px;box-shadow:none;padding:11px 14px}
 @media(min-width:1400px){.site-header .navlinks{font-size:12px;gap:16px}.site-header .brand{font-size:18px}}
+@media(max-width:380px){
+ .site-header .nav{gap:6px}
+ .site-header .brand{gap:6px;font-size:11px}
+ .site-header .club-crest{width:32px;height:32px}
+ .site-header .brand small{font-size:7px;letter-spacing:.7px}
+ .site-header .menu-toggle{padding:8px;font-size:11px;gap:4px}
+ .site-header .nav-chat-button{width:40px;min-width:40px;height:40px;padding:4px}
+}
