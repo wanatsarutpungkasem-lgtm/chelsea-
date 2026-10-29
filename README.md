@@ -1,8 +1,13 @@
-# chelsea-
-อ้ายโอห์ม แฟนเชลซี
+# อ้ายโอห์ม แฟนเชลซี
 
-## Bot Chelsea
+เว็บไซต์ส่วนตัว: https://wanatsarutpungkasem-lgtm.github.io/chelsea-/
 
-ชุดอัปเดตล่าสุดเพิ่มเอฟเฟกต์บอตและเตรียม API โปรแกรมบอล สกอร์ และเปอร์เซ็นต์คาดการณ์ก่อนแข่ง ดูวิธีติดตั้งใน [FOOTBALL-SETUP.md](FOOTBALL-SETUP.md)
+หน้าเว็บไซต์อยู่ใน `dist/` และ GitHub Actions เผยแพร่จากโฟลเดอร์นี้ HTML, CSS และ JavaScript แยกไฟล์กัน
 
-ต้องอัปโหลด `netlify/`, `tests/`, `package.json`, `package-lock.json` และ `netlify.toml` พร้อม `dist/` แล้วตั้ง `FOOTBALL_API_KEY` เป็น secret ฝั่ง Netlify Functions จึงจะเรียกข้อมูลจริงได้
+ระบบสมุดบันทึกใช้ Supabase Auth เก็บร่างส่วนตัวและฉบับเผยแพร่แยกตาราง มี RLS ตรวจสิทธิ์ที่ฐานข้อมูล ดู [วิธีสมัครและอัปเดต](README-CLOUD-JOURNAL.md)
+
+ทดสอบด้วย Node.js 22 ขึ้นไป: `npm test`
+
+เปิดเว็บในเครื่อง: `node scripts/preview.mjs` แล้วเปิด http://127.0.0.1:4173/dashboard.html
+
+ระบบสกอร์ฟุตบอลเดิมอยู่ใน `netlify/functions/` และยังต้องย้าย backend ก่อนใช้งานผ่าน GitHub Pages ได้ ไม่ใส่ API key หรือ service-role key ในไฟล์ที่เผยแพร่
