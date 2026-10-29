@@ -15,6 +15,12 @@ export function createJournalStore(client){
    if(!row)throw Error('บันทึกถูกแก้ไขจากอีกหน้าต่างแล้ว กรุณาโหลดข้อมูลใหม่ก่อนแก้ต่อ');
    return cloudEntries([row])[0];
   },
+  async importDrafts(entries,userId){
+   if(entries.length>500)throw Error('นำเข้าได้สูงสุด 500 เรื่องต่อครั้ง');
+   if(!entries.length)return [];
+   const rows=entries.map(entry=>({id:entry.id,owner_id:userId,content:validateEntry(entry)}));
+   return cloudEntries(check(await client.from('journal_entries').insert(rows).select('content,version'))||[]);
+  },
   async publish(id){check(await client.from('journal_publications').upsert({id},{onConflict:'id'}).select('id').single());},
   async unpublish(id){check(await client.from('journal_publications').delete().eq('id',id));}
  };

@@ -1,12 +1,13 @@
 import {JOURNAL_KEY,validateEntry,parseBackup} from './journal-model.mjs';
 import {createJournalStore,pendingImports,publicationLabel} from './journal-cloud.mjs';
 const $=s=>document.querySelector(s),form=$('#journal-form'),status=$('#journal-status'),list=$('#journal-entries');
-let entries=[],publications=[],local=[],healthy=true,owner=null,sessionUser=null,mode='public',epoch=0,authRun=0,busy=false,authMode='signin',client,store;
+let entries=[],publications=[],local=[],healthy=true,owner=null,sessionUser=null,mode='public',epoch=0,authRun=0,busy=false,authMode='signin',loading=false,loadFailed=false,client,store;
 const tell=text=>{status.textContent=text;};
 const authTell=text=>{$('#auth-status').textContent=text;};
 const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
 const readableError=error=>{
  const message=error?.message||'';
+ if(error?.code==='23505')return 'มีบันทึกรหัสเดียวกันแล้ว กรุณากดโหลดข้อมูลใหม่แล้วนำเข้าอีกครั้ง ข้อมูลทั้งชุดยังไม่ถูกนำเข้า';
  if(/Invalid login credentials/i.test(message))return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หากยังไม่เคยสร้างบัญชีเว็บไซต์ ให้กดสร้างบัญชีครั้งแรก';
  if(/Email not confirmed/i.test(message))return 'กรุณายืนยันอีเมลจากลิงก์ที่ได้รับก่อนเข้าสู่ระบบ';
  if(/rate.limit|too many|security purposes/i.test(message))return 'ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
@@ -33,7 +34,7 @@ function render(){
  controls();$('#entry-count').textContent=entries.length;$('#moment-count').textContent=entries.filter(e=>e.moment).length;list.replaceChildren();
  const q=$('#journal-search').value.trim().toLocaleLowerCase(),mood=$('#mood-filter').value;
  const filtered=entries.filter(e=>(mood==='all'||e.mood===mood)&&[e.title,e.opponent,e.body,e.moment,e.motm].join(' ').toLocaleLowerCase().includes(q)).sort((a,b)=>b.matchDate.localeCompare(a.matchDate)||b.createdAt.localeCompare(a.createdAt));
- if(!filtered.length){list.append(node('p',entries.length?'ไม่พบบันทึกตามตัวกรอง':mode==='public'?'โอห์มยังไม่ได้เผยแพร่บันทึกครับ กลับมาอ่านเรื่องราวหลังเกมได้ที่หน้านี้':'ยังไม่มีบันทึก เริ่มเขียนจากแมตช์ที่โอมเลือกได้เลยครับ','journal-empty'));return;}
+ if(!filtered.length){list.append(node('p',loading?'กำลังโหลดบันทึก…':loadFailed?'ยังโหลดบันทึกไม่ได้ กดโหลดข้อมูลใหม่เพื่อลองอีกครั้ง':entries.length?'ไม่พบบันทึกตามตัวกรอง':mode==='public'?'โอห์มยังไม่ได้เผยแพร่บันทึกครับ กลับมาอ่านเรื่องราวหลังเกมได้ที่หน้านี้':'ยังไม่มีบันทึก เริ่มเขียนจากแมตช์ที่โอมเลือกได้เลยครับ','journal-empty'));return;}
  for(const e of filtered){
   const card=node('article',undefined,'journal-entry');const date=new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeZone:'UTC'}).format(new Date(e.matchDate+'T00:00:00Z'));
   card.append(node('small',date+' · เชลซี พบ '+e.opponent),node('h3',e.title));
@@ -50,16 +51,16 @@ function render(){
 }
 async function run(action){if(busy)return;busy=true;form.querySelector('button[type=submit]').disabled=true;render();try{await action();}catch(error){tell(readableError(error));authTell(readableError(error));}finally{busy=false;form.querySelector('button[type=submit]').disabled=false;render();}}
 async function requireOwner(){if(!client||!owner)throw Error('กรุณาเข้าสู่ระบบเจ้าของก่อน');const {data,error}=await client.auth.getUser();if(error&&(!error.status||error.status>=500))throw error;if(error||data.user?.id!==owner.id){clearPrivate();throw Error('session หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง');}const result=await client.rpc('is_chat_owner');if(result.error||result.data!==true){clearPrivate();throw Error('บัญชีนี้ยังไม่มีสิทธิ์เจ้าของ');}return data.user;}
-function clearPrivate(invalidate=true){if(invalidate)authRun++;epoch++;owner=null;sessionUser=null;mode='public';entries=[];publications=[];reset();tell('');render();}
+function clearPrivate(invalidate=true){if(invalidate)authRun++;epoch++;loading=false;loadFailed=false;owner=null;sessionUser=null;mode='public';entries=[];publications=[];reset();tell('');render();}
 async function reload(nextMode){
- const request=++epoch;mode=nextMode;entries=[];publications=[];render();
+ const request=++epoch;mode=nextMode;entries=[];publications=[];loading=nextMode!=='local';loadFailed=false;render();
  if(mode==='local'){entries=local;render();tell(healthy?'บันทึกเดิมยังอยู่ในเครื่อง การนำขึ้นคลาวด์ต้องกดแยกต่างหาก':'อ่านบันทึกเดิมไม่ได้ จึงหยุดเขียนทับไว้');return;}
- if(!store){tell('เชื่อมต่อคลาวด์ไม่ได้ ยังเปิดสมุดในเครื่องและส่งออกไฟล์สำรองได้');return;}
+ if(!store){loading=false;loadFailed=true;render();tell('เชื่อมต่อคลาวด์ไม่ได้ ยังเปิดสมุดในเครื่องและส่งออกไฟล์สำรองได้');return;}
  try{
   const published=await store.publications();let next=published.map(p=>validateEntry(p.content));
   if(nextMode==='cloud'){await requireOwner();next=await store.drafts();}
   if(request!==epoch)return;publications=published;entries=next;render();
- }catch(error){if(request===epoch){entries=[];render();tell('โหลดบันทึกไม่สำเร็จ: '+readableError(error));}}
+ }catch(error){if(request===epoch){entries=[];loadFailed=true;tell('โหลดบันทึกไม่สำเร็จ: '+readableError(error));}}finally{if(request===epoch){loading=false;render();}}
 }
 async function refreshAuth(){
  if(!client)return;const request=++authRun;
@@ -103,14 +104,15 @@ $('#owner-login').addEventListener('submit',event=>{event.preventDefault();run(a
  }
 });});
 $('#owner-signout').addEventListener('click',()=>run(async()=>{clearPrivate();const result=await client.auth.signOut();if(result.error)throw result.error;await reload('public');authTell('ออกจากระบบแล้ว แสดงเฉพาะบันทึกสาธารณะ');}));
+$('#refresh-journal').addEventListener('click',()=>{if(busy)return;if([...form.querySelectorAll('input:not([type=hidden]),textarea')].some(e=>e.value)&&!confirm('โหลดข้อมูลใหม่และล้างข้อความที่ยังไม่บันทึกในแบบฟอร์มไหมครับ?'))return;reset();tell('');reload(mode);});
 $('#cloud-mode').addEventListener('click',()=>{if(busy)return;reset();reload('cloud');});
 $('#local-mode').addEventListener('click',()=>{if(busy)return;reset();reload('local');});$('#public-mode').addEventListener('click',()=>{if(busy)return;reset();reload('public');});
-$('#sync-local').addEventListener('click',()=>run(async()=>{const user=await requireOwner();if(!healthy)throw Error('อ่านบันทึกในเครื่องไม่ได้ กรุณานำเข้าจากไฟล์สำรอง');const drafts=await store.drafts();const pending=pendingImports(local,drafts);if(drafts.length+pending.length>500)throw Error('นำเข้ารวมกันได้สูงสุด 500 เรื่อง');for(const entry of pending)await store.save(entry,user.id,null);await reload('cloud');tell('นำขึ้นคลาวด์เป็นร่าง '+pending.length+' เรื่อง ข้อมูลเดิมในเครื่องยังอยู่ และยังไม่ได้เผยแพร่');}));
+$('#sync-local').addEventListener('click',()=>run(async()=>{const user=await requireOwner();if(!healthy)throw Error('อ่านบันทึกในเครื่องไม่ได้ กรุณานำเข้าจากไฟล์สำรอง');const drafts=await store.drafts();const pending=pendingImports(local,drafts);if(drafts.length+pending.length>500)throw Error('นำเข้ารวมกันได้สูงสุด 500 เรื่อง');await store.importDrafts(pending,user.id);await reload('cloud');tell('นำขึ้นคลาวด์เป็นร่าง '+pending.length+' เรื่อง ข้อมูลเดิมในเครื่องยังอยู่ และยังไม่ได้เผยแพร่');}));
 $('#cancel-edit').addEventListener('click',()=>{reset();tell('ล้างเฉพาะแบบฟอร์มแล้ว บันทึกเดิมยังอยู่');});
 $('#start-memory').addEventListener('click',()=>{if([...form.querySelectorAll('input:not([type=hidden]),textarea')].some(e=>e.value)&&!confirm('แทนข้อความที่ยังไม่บันทึกด้วยข้อมูลนัดชิงสโมสรโลกไหมครับ?'))return;reset();form.elements.title.value='วันที่เชลซีเป็นแชมป์โลก';form.elements.matchDate.value='2025-07-13';form.elements.opponent.value='Paris Saint-Germain';form.elements.score.value='เชลซี 3–0 PSG';form.elements.body.focus();tell('เติมข้อเท็จจริงการแข่งขันแล้ว ความรู้สึกของโอมรอให้เล่าด้วยตัวเองครับ');});
 $('#journal-search').addEventListener('input',render);$('#mood-filter').addEventListener('change',render);
 $('#export-journal').addEventListener('click',()=>{if(mode==='public')return;if(mode==='local'&&!healthy){tell('อ่านบันทึกเดิมไม่ได้ จึงยังสร้างไฟล์สำรองที่สมบูรณ์ไม่ได้');return;}const blob=new Blob([JSON.stringify({version:1,entries:entries.map(validateEntry)},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download='ohm-blue-journal-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);tell('สร้างไฟล์สำรองฉบับร่างแล้ว ไฟล์นี้อาจมีเรื่องราวส่วนตัว เก็บไว้กับโอมครับ');});
-$('#import-journal').addEventListener('change',event=>{const file=event.target.files[0];if(!file)return;run(async()=>{if(file.size>2_000_000)throw Error('ไฟล์ใหญ่เกิน 2 MB');const imported=parseBackup(await file.text()),added=pendingImports(imported,entries);if(entries.length+added.length>500)throw Error('รวมบันทึกได้สูงสุด 500 เรื่อง');if(mode==='local')persistLocal([...local,...added]);else if(mode==='cloud'){const user=await requireOwner();for(const entry of added)await store.save(entry,user.id,null);await reload('cloud');}else throw Error('กรุณาเข้าสู่ระบบเจ้าของก่อนนำเข้า');tell('นำเข้าเป็นร่าง '+added.length+' เรื่อง โดยไม่ทับรหัสเดิมและยังไม่เผยแพร่');});event.target.value='';});
+$('#import-journal').addEventListener('change',event=>{const file=event.target.files[0];if(!file)return;run(async()=>{if(file.size>2_000_000)throw Error('ไฟล์ใหญ่เกิน 2 MB');const imported=parseBackup(await file.text()),added=pendingImports(imported,entries);if(entries.length+added.length>500)throw Error('รวมบันทึกได้สูงสุด 500 เรื่อง');if(mode==='local')persistLocal([...local,...added]);else if(mode==='cloud'){const user=await requireOwner();await store.importDrafts(added,user.id);await reload('cloud');}else throw Error('กรุณาเข้าสู่ระบบเจ้าของก่อนนำเข้า');tell('นำเข้าเป็นร่าง '+added.length+' เรื่อง โดยไม่ทับรหัสเดิมและยังไม่เผยแพร่');});event.target.value='';});
 try{const config=window.OM_CHAT_CONFIG;if(!window.supabase||!config)throw Error();client=window.supabase.createClient(config.supabaseUrl,config.publishableKey,{auth:{storageKey:'ohm.journal.auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});store=createJournalStore(client);
  client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){clearPrivate();setTimeout(()=>refreshAuth(),0);}else if(event==='TOKEN_REFRESHED'){if(owner)setTimeout(()=>requireOwner().catch(error=>{tell(readableError(error));}),0);}else if(['SIGNED_IN','INITIAL_SESSION','USER_UPDATED'].includes(event))setTimeout(()=>refreshAuth(),0);});
 }catch{authTell('ระบบคลาวด์ยังเชื่อมต่อไม่ได้ สามารถเปิดสมุดเดิมในเครื่องและสำรองไฟล์ไว้ได้');}
