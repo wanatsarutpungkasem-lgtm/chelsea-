@@ -1,0 +1,132 @@
+/* BLUE AT HEART — layered photography, stadium light and responsive motion.
+   Content is fully visible unless JavaScript explicitly opts into reveals. */
+:root{--experience-ease:cubic-bezier(.2,.72,.22,1);--experience-line:#8baaff38;--experience-glow:#2756ff38;--scroll-progress:0;--scene-offset:0px}
+body{background-color:#071522;background-image:radial-gradient(ellipse at 88% 5%,#1648ef24 0,transparent 42%),radial-gradient(ellipse at 8% 28%,#3b789716 0,transparent 40%)}
+::selection{background:#b8d073;color:#071522}
+.site-header .nav{border-bottom-color:var(--experience-line)}
+.brand .club-crest{filter:drop-shadow(0 0 13px #3465ec48);transition:transform .35s var(--experience-ease),filter .35s}
+.brand:hover .club-crest{transform:rotate(-9deg) scale(1.08);filter:drop-shadow(0 0 18px #628dff8c)}
+.site-header .navlinks>a,.dropdown-panel a{transition:color .2s,background-color .2s}
+.site-header .navlinks>a[aria-current=page]{color:#d5f182}
+.dropdown-panel{background:linear-gradient(145deg,#142e50,#0b1b2f);border-color:#8baaff45;box-shadow:0 18px 55px #02081270}
+.eyebrow{font-weight:600}
+.hero h1{letter-spacing:-.045em;text-shadow:0 14px 50px #0000001a}
+.hero h1 span,.page-intro h1 span{color:#9bb6ff;text-shadow:0 0 55px #4779ff30}
+.hero-grid{perspective:1200px}
+.portrait-hero{isolation:isolate;transform-style:preserve-3d}
+.portrait-hero::before{content:'';position:absolute;inset:-10px 10px 14px -10px;border:1px solid #79a0ff69;pointer-events:none;border-radius:9px;z-index:-1;transform:translate3d(-4px,2px,-20px)}
+.portrait-hero::after{content:'';position:absolute;inset:15% -8% 4% 10%;background:radial-gradient(ellipse,#2759ed4d,transparent 70%);filter:blur(25px);pointer-events:none;z-index:-2}
+.hero-photo{border-color:#a4beff4a;border-radius:7px;box-shadow:0 25px 55px #02091765;transition:filter .6s var(--experience-ease)}
+.portrait-hero>a{border-radius:7px;overflow:hidden}
+.portrait-hero>a:hover .hero-photo{filter:saturate(1.08) contrast(1.025)}
+.portrait-hero .ticket{background:linear-gradient(135deg,#183568,#0b1e3c);border:1px solid #afc4ff9c;box-shadow:0 16px 38px #0006,0 1px 0 #ffffff26 inset;transform:translate3d(0,calc(var(--scene-offset) * -.6),36px) rotate(6deg);border-radius:4px;transition:box-shadow .3s}
+.portrait-hero .ticket span{color:#d5f182}
+.portrait-hero .art-label{border-radius:0 0 7px 7px;text-shadow:0 2px 8px #0008}
+.hero-bottom{border-top-color:#7c9bda36}
+.page-intro{position:relative;isolation:isolate}
+.page-intro::after{content:'';position:absolute;right:7%;top:20px;width:min(34vw,360px);height:210px;max-width:80%;background:radial-gradient(ellipse,#2854ce26,transparent 70%);pointer-events:none;z-index:-1}
+.page-intro h1{letter-spacing:-.03em}
+.light{background-image:radial-gradient(ellipse at 100% 0,#cbd8f75e,transparent 55%)}
+.squad-section,.gallery-section{background-image:radial-gradient(ellipse at 85% 0,#254ca62b,transparent 55%)}
+.dream{background-image:radial-gradient(ellipse at 20% 0,#efffd6a3,transparent 68%)}
+.dream-ticket{border-radius:9px;box-shadow:10px 18px 0 #07152212,0 26px 50px #07152220}
+.about-portrait{border-radius:8px;box-shadow:0 22px 50px #07152230}
+.about-portrait img{border-radius:3px}
+.player.has-photo,.coach-photo-card,.squad-card,.explore-card,.gallery-open,.journal-entry{border-color:var(--experience-line);box-shadow:0 12px 32px #030c1726;transition:border-color .35s,box-shadow .35s,transform .45s var(--experience-ease)}
+.player.has-photo,.coach-photo-card,.squad-card{background-image:linear-gradient(145deg,#183356,#0e233d)}
+.person-photo,.squad-portrait img{transition:transform .55s var(--experience-ease),filter .55s}
+.gallery-open{border:1px solid #789bd738;border-radius:10px}
+.gallery-item figcaption{padding-left:4px}
+.journal-panel{background:linear-gradient(145deg,#11243b,#0b1c30);border-color:#6e8cb03d;border-radius:12px;box-shadow:0 12px 32px #020b1724}
+.journal-notice{border-radius:0 9px 9px 0}
+.journal-summary article{border-radius:9px;background:linear-gradient(135deg,#142c49,#0f2238)}
+.journal-memory{border-radius:12px;box-shadow:0 16px 42px #0002}
+.journal-panel input,.journal-panel textarea,.journal-panel select,.gallery-toolbar select,.squad-tools select{transition:border-color .2s,box-shadow .2s}
+.journal-panel input:focus-visible,.journal-panel textarea:focus-visible,.journal-panel select:focus-visible{box-shadow:0 0 0 5px #d5f18212}
+.button,.journal-secondary,.textlink,.menu-toggle,.dropdown-toggle,.photo-dialog button,.photo-controls button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.button,.journal-secondary,.photo-dialog button,.photo-controls button{position:relative;isolation:isolate;overflow:hidden;transition:transform .22s var(--experience-ease),box-shadow .25s,background-color .25s,border-color .25s}
+.button{border:1px solid #6d95ff4f;border-radius:7px;background-image:linear-gradient(120deg,#ffffff0c,transparent);box-shadow:0 7px 20px #123cb637,0 1px 0 #ffffff21 inset;min-height:48px;justify-content:center;text-align:center;line-height:1.6}
+.button::after{content:'';position:absolute;inset:-60% auto -60% -75%;width:35%;background:linear-gradient(90deg,transparent,#ffffff27,transparent);transform:skewX(-22deg);pointer-events:none;transition:left .65s var(--experience-ease)}
+.button:hover::after,.button:focus-visible::after{left:140%}
+.button>span[aria-hidden=true]{transition:transform .25s var(--experience-ease)}
+.button:hover>span[aria-hidden=true]{transform:translate(3px,-2px)}
+.button-outline{background-color:transparent;border-color:#b2c8ed70;box-shadow:none}
+.textlink{position:relative;transition:color .2s,border-color .2s}
+.textlink:hover{color:#d5f182;border-color:#d5f182}
+.menu-toggle{border-radius:6px;min-height:44px;transition:background-color .2s,border-color .2s}
+.menu-toggle:hover{background:#173354;border-color:#a4beff80}
+.photo-dialog{box-shadow:0 35px 100px #0008}
+.photo-dialog[open]{animation:experience-dialog-in .25s var(--experience-ease)}
+:where(a,button,input,select,textarea):focus-visible{outline:3px solid #d5f182;outline-offset:5px}
+:where(button,a.button):disabled{transform:none!important;box-shadow:none;cursor:wait}
+.interaction-ripple{position:absolute;left:var(--ripple-x,50%);top:var(--ripple-y,50%);width:16px;height:16px;border-radius:50%;background:#dae5ff73;pointer-events:none;transform:translate(-50%,-50%) scale(0);z-index:3}
+.scroll-progress{position:fixed;left:0;top:0;right:0;height:3px;pointer-events:none;z-index:1000;transform:scaleX(var(--scroll-progress,0));transform-origin:left;background:linear-gradient(90deg,#3b65ff,#a7c3ff,#d5f182);box-shadow:0 0 14px #779cff50}
+.motion-toggle{position:fixed;left:18px;bottom:18px;z-index:30;padding:9px 12px;min-height:42px;max-width:calc(100vw - 36px);font:500 11px var(--font-thai, sans-serif);color:#d9e5fa;border:1px solid #9db6de66;border-radius:24px;background:#0c1e32ef;box-shadow:0 5px 20px #0003;cursor:pointer;line-height:1.5;touch-action:manipulation;transition:background .2s,border-color .2s}
+.motion-toggle:hover{background:#18365b;border-color:#adc4eb}
+.motion-toggle[aria-pressed=true]{color:#d5f182}
+/* JavaScript toggles these only after a working observer is ready. A focused
+   reveal is always visible so keyboard access never depends on scrolling. */
+.experience-ready .reveal-ready{opacity:0;translate:0 20px;transition:opacity .65s var(--experience-ease),translate .65s var(--experience-ease),transform .25s var(--experience-ease),box-shadow .35s,border-color .35s;transition-delay:var(--reveal-delay,0ms)}
+.experience-ready .reveal-ready.is-revealed,.experience-ready .reveal-ready:focus-within{opacity:1;translate:0 0}
+[data-tilt]{--tilt-x:0deg;--tilt-y:0deg}
+@media(hover:hover) and (pointer:fine){
+ [data-tilt]{transform:perspective(1000px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));transform-style:preserve-3d;transition:transform .25s var(--experience-ease),box-shadow .35s,border-color .35s}
+ [data-tilt]:hover{border-color:#96b5ff8a;box-shadow:0 24px 48px #01070e66}
+ .player.has-photo:hover .person-photo,.coach-photo-card:hover .person-photo,.squad-card:hover .squad-portrait img{transform:scale(1.035);filter:saturate(1.08)}
+ .button:hover,.journal-secondary:hover,.photo-dialog button:hover{transform:translateY(-3px);box-shadow:0 10px 25px #02091542}
+ .button:active,.journal-secondary:active,.photo-dialog button:active{transform:translateY(1px) scale(.975);transition-duration:.08s}
+ .page-pager a{transition:translate .25s,color .25s}
+ .page-pager a:first-child:hover{translate:-4px 0}.page-pager a:last-child:hover{translate:4px 0}
+}
+@media(hover:none),(pointer:coarse){
+ [data-tilt]{transform:none}
+ .button:active,.journal-secondary:active{transform:scale(.98)}
+}
+@media(min-width:1151px) and (max-width:1200px){
+ .site-header .nav{flex-wrap:wrap;height:auto;min-height:88px;padding:16px 0;gap:12px}.site-header .menu-toggle{display:inline-flex;margin-left:auto;order:2}.site-header .nav-chat-button{order:3;margin-left:0}.site-header .navlinks{display:none;order:4;flex-basis:100%;flex-direction:column;align-items:stretch;gap:0;padding:14px 0;border-top:1px solid #ffffff20}.site-header .navlinks.is-open{display:flex}.site-header .navlinks>a{display:block!important;padding:14px 10px}.nav-dropdown .dropdown-toggle{padding:14px 10px;width:100%;text-align:left}.dropdown-panel{position:static;width:100%;margin:0 0 8px;box-shadow:none}.site-header .navlinks a[aria-current=page]{box-shadow:inset 3px 0 0 #d5f182;background:#ffffff08}
+}
+@media(min-width:1201px){.site-header .navlinks{gap:12px;font-size:11px}.site-header .nav{gap:12px}.site-header .brand{font-size:16px}}
+@media(max-width:600px){
+ .motion-toggle{left:12px;bottom:12px;min-height:42px;padding:8px 11px;font-size:10px}
+ .portrait-hero::before{inset:-6px 9px 10px -5px;transform:none}.portrait-hero::after{inset:12% 0 0;filter:blur(15px)}
+ .portrait-hero .ticket{transform:translateY(calc(var(--scene-offset) * -.3)) rotate(4deg)}
+ .hero h1{letter-spacing:-.035em}.button{min-height:48px}.hero-bottom{padding-bottom:35px}
+ .page-pager{padding-bottom:75px}.journal-bottom-links{padding-bottom:25px}.footer{padding-bottom:74px}
+ .experience-ready .reveal-ready{translate:0 12px}
+ .experience-ready .reveal-ready.is-revealed{translate:0 0}
+}
+@keyframes experience-ripple{to{transform:translate(-50%,-50%) scale(28);opacity:0}}
+@keyframes experience-dialog-in{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+/* Native cross-document transitions preserve normal navigation, browser history,
+   modified clicks and form behavior. Unsupported browsers simply navigate. */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:experience-page-out .22s ease-in both}
+::view-transition-new(root){animation:experience-page-in .38s var(--experience-ease) both}
+@keyframes experience-page-out{to{opacity:0;transform:translateX(-18px)}}
+@keyframes experience-page-in{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+/* Explicit and operating-system reduced motion are complete fallbacks. */
+html.motion-off{scroll-behavior:auto}
+html.motion-off .reveal-ready{opacity:1;translate:none;transition:none}
+html.motion-off [data-tilt]{transform:none!important}
+html.motion-off .interaction-ripple{display:none}
+html.motion-off :is(.button,.journal-secondary,.photo-dialog button,.person-photo,.squad-portrait img,.gallery-item img){transform:none!important}
+html.motion-off .page-pager a{translate:none!important}
+html.motion-off .portrait-hero .ticket{transform:rotate(4deg)}
+html.motion-off *,html.motion-off *::before,html.motion-off *::after{animation:none!important;transition:none!important}
+html.motion-off::view-transition-old(root),html.motion-off::view-transition-new(root){animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto!important}
+ *,*::before,*::after{animation:none!important;transition:none!important}
+ .experience-ready .reveal-ready{opacity:1!important;translate:none!important}
+ [data-tilt]{transform:none!important}.interaction-ripple{display:none}
+ :is(.button,.journal-secondary,.photo-dialog button,.person-photo,.squad-portrait img,.gallery-item img){transform:none!important}
+ .page-pager a{translate:none!important}
+ .portrait-hero .ticket{transform:rotate(4deg)}
+ ::view-transition-old(root),::view-transition-new(root){animation:none!important}
+}
+
+.has-interaction{position:relative;isolation:isolate;overflow:hidden}
+
+/* Keep the motion preference with navigation rather than covering page content. */
+.dropdown-panel .motion-toggle{position:relative;inset:auto;display:block;width:100%;max-width:none;margin-top:6px;text-align:left;border-radius:6px;font-size:12px;box-shadow:none;padding:11px 14px}
+@media(min-width:1400px){.site-header .navlinks{font-size:12px;gap:16px}.site-header .brand{font-size:18px}}
