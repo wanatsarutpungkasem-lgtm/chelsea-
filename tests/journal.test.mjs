@@ -31,3 +31,13 @@ test('publishing sends only an ID; server selects the saved snapshot',async()=>{
  let sent;const query={upsert(v){sent=v;return this;},select(){return this;},async single(){return {data:{id:entry.id}};}};
  await createJournalStore({from(){return query;}}).publish(entry.id);assert.deepEqual(sent,{id:entry.id});
 });
+test('backup import uses one atomic insert and skips empty batches',async()=>{
+ const calls=[];const query={insert(rows){calls.push(rows);return this;},async select(){return {data:[{content:entry,version:1}]};}};
+ const store=createJournalStore({from(table){assert.equal(table,'journal_entries');return query;}});
+ assert.deepEqual(await store.importDrafts([],'owner'),[]);assert.equal(calls.length,0);
+ await store.importDrafts([entry,{...entry,id:'second'}],'owner');assert.equal(calls.length,1);assert.equal(calls[0].length,2);assert.equal(calls[0][0].owner_id,'owner');
+});
+test('failed import propagates database error instead of claiming partial success',async()=>{
+ const failure={code:'23505',message:'duplicate'};const query={insert(){return this;},async select(){return {data:null,error:failure};}};
+ await assert.rejects(createJournalStore({from(){return query;}}).importDrafts([entry],'owner'),error=>error===failure);
+});
