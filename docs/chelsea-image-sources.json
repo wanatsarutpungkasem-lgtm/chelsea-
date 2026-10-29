@@ -1,0 +1,150 @@
+{
+  "checked": "2026-10-29",
+  "roster_source": "https://www.chelseafc.com/en/teams/mens-profiles",
+  "images": [
+    {
+      "file": "emiliano-martinez.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790593018/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Martinez_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "teddy-sharman-lowe.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790594397/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_SharmanLowe_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "mike-penders.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797146/editorial/people/first-team/2026-27/With%20USDC/Penders__26_27_profile_avatar.png"
+    },
+    {
+      "file": "gabriel-slonina.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790594399/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Slolina_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "marco-palestra.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790593020/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Palestra_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "wesley-fofana.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590701/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Fofana_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "maxence-lacroix.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790592711/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Lacroix_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "levi-colwill.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790586350/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Colwill_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "jorrel-hato.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590933/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Hato_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "reece-james.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590936/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_James.png"
+    },
+    {
+      "file": "malo-gusto.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590702/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Gusto_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "pep-chavarria.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797027/editorial/people/first-team/2026-27/With%20USDC/Chavarria_profile_26_27_avatar.png"
+    },
+    {
+      "file": "aaron-anselmino.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797001/editorial/people/first-team/2026-27/With%20USDC/Anselmino_profile_26_27_avatar.png"
+    },
+    {
+      "file": "josh-acheampong.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790598523/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Acheampong_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "olutayo-subuloye.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797184/editorial/people/first-team/2026-27/With%20USDC/Subuloye_profile_26_27_avatar.png"
+    },
+    {
+      "file": "valentin-barco.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797011/editorial/people/first-team/2026-27/With%20USDC/Barco_profile_26_27_avatar.png"
+    },
+    {
+      "file": "jordan-henderson.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590935/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Henderson_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "moises-caicedo.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790586339/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Caicedo_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "reggie-watson.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797223/editorial/people/first-team/2026-27/With%20USDC/Watson_profile_26_27_avatar.png"
+    },
+    {
+      "file": "mahdi-nicoll-jazuli.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797121/editorial/people/first-team/2026-27/With%20USDC/Nicoll-Jazuli_profile_26_27_avatar.png"
+    },
+    {
+      "file": "romeo-lavia.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797074/editorial/people/first-team/2026-27/With%20USDC/Lavia_profile_26_27_avatar.png"
+    },
+    {
+      "file": "pedro-neto.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790593019/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Neto_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "joao-pedro.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790594048/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Pedro.png"
+    },
+    {
+      "file": "cole-palmer.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790602792/3333x5000_Avatar_Image_Men_26_27_Palmer_SF_Home_26_27_RGB_cnce6g.png"
+    },
+    {
+      "file": "jamie-gittens.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590701/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Gittens_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "morgan-rogers.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790594065/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Rogers.png"
+    },
+    {
+      "file": "danny-welbeck.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790594402/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Welbeck_SF_Home_26_27_RGB.png"
+    },
+    {
+      "file": "emmanuel-emegha.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797040/editorial/people/first-team/2026-27/With%20USDC/Emegha_profile_26_27_avatar.png"
+    },
+    {
+      "file": "geovany-quenda.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1792797162/editorial/people/first-team/2026-27/With%20USDC/Quenda_profile_26_27_avatar.png"
+    },
+    {
+      "file": "estevao.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1790590354/editorial/people/first-team/2026-27/With%20USDC/3333x5000_Avatar_Image_Men_26_27_Estevao.png"
+    },
+    {
+      "file": "drogba.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1520000349/editorial/news/2018/2/drogba-145211512.jpg"
+    },
+    {
+      "file": "hazard.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1538242819/editorial/news/2018/9/hazard-1042973590.jpg"
+    },
+    {
+      "file": "terry.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1538946056/mobile-app/John-Terry-686385252.jpg"
+    },
+    {
+      "file": "alonso.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1784133787/editorial/people/management/2026-27/Xabi_Alonso_2026-27_profile_avatar-removebg.png"
+    },
+    {
+      "file": "tuchel.webp",
+      "source": "https://img.chelseafc.com/image/upload/v1611685161/editorial/news/2021/01/26/welcome_tuchel_poster.jpg"
+    },
+    {
+      "file": "chelsea-crest.webp",
+      "source": "http://img.chelseafc.com/image/upload/v1782904361/Site%20Chelsea%20Badges/Chelsea_club_badge_crest_logo_2026-27.png"
+    }
+  ]
+}
