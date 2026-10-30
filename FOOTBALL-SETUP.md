@@ -25,18 +25,16 @@
 
 ไม่ต้องส่ง key ในแชต และไม่ต้องใส่ลง GitHub, HTML หรือ JavaScript ฝั่งหน้าเว็บ
 
-## 2. ตั้งค่า Netlify
+## 2. ตั้งค่า Supabase Edge Function
 
-เปิดโปรเจกต์ https://app.netlify.com/projects/fan-chelsea แล้วเข้า **Environment variables**
+เว็บไซต์ปัจจุบันใช้ GitHub Pages และเรียก Backend ที่ Supabase Edge Function ชื่อ `football` โดยตรง ไม่ใช้ Netlify แล้ว
 
-- Key: `FOOTBALL_API_KEY`
-- Value: API key ของคุณ
-- ทำเครื่องหมายว่าเป็น secret หากมีตัวเลือก
-- ใช้กับ production และต้องครอบคลุม scope **Functions** หากหน้าจอมีให้เลือก
+1. สร้าง API-Football key ใหม่ เพราะ key เดิมเคยถูกส่งในแชตและควรถูกยกเลิก
+2. เปิด Supabase Dashboard → Edge Functions → Secrets
+3. เพิ่ม Key `FOOTBALL_API_KEY` และกรอก key ใหม่
+4. ห้ามส่ง key ในแชตหรือใส่ใน GitHub
 
-ห้ามใส่ key ใน `netlify.toml` เพราะค่าในไฟล์นี้ไม่ถูกส่งให้ Functions ตอนรันจริง
-
-หลังเพิ่มหรือเปลี่ยน environment variable ต้อง deploy ใหม่จึงมีผล
+Edge Function ถูก deploy แล้วที่ `https://unjtfvxnxdgqlupzkgoc.supabase.co/functions/v1/football` และจะเริ่มทำงานทันทีเมื่อมี secret โดยไม่ต้อง deploy เว็บใหม่
 
 ## 3. อัปโหลดซอร์สครบชุดไป GitHub
 
@@ -51,11 +49,9 @@ package.json
 package-lock.json
 ```
 
-Commit ไป `main` แล้วรอ Netlify แสดง Ready
+Commit ไป `main` แล้วรอ GitHub Actions เผยแพร่ `dist/` ไป GitHub Pages
 
-ตั้งค่า build ผ่าน `netlify.toml` ให้แล้ว: `npm test`, publish `dist`, functions `netlify/functions`, Node 22
-
-อัปโหลดเฉพาะ dist หรือใช้ Netlify Drop จะไม่ติดตั้ง server function ของชุดนี้ ต้องใช้ Git deployment หรือ Netlify CLI ที่ deploy Functions ด้วย
+โฟลเดอร์ `supabase/functions/football/` เป็นซอร์สสำรองของ Backend ที่ deploy ไว้แล้ว ไม่ควรย้าย secret มาไว้ในโฟลเดอร์นี้
 
 ## 4. ทดสอบบนเว็บจริง
 
@@ -70,7 +66,7 @@ Commit ไป `main` แล้วรอ Netlify แสดง Ready
 
 ยังไม่บันทึกประวัติแชทในฐานข้อมูลหรือ localStorage ระบบส่งเฉพาะวัน ชื่อทีม และรหัสคู่ที่ต้องค้นหา ไม่ส่งบทสนทนาทั้งหมด ไม่เรียกบริการ LLM
 
-API เป็นแบบกดเรียกเอง ไม่มี auto polling ตั้ง CDN cache 60 วินาที และ rate limit 30 ครั้ง/นาที/IP ไว้ แต่โควตารวมยังขึ้นกับแพ็กเกจ API ของคุณ และการค้นหาหลายวัน/หลายคู่ยังใช้โควตาได้
+API เป็นแบบกดเรียกเอง ไม่มี auto polling ตั้ง cache 60 วินาที และมี rate limit ต่อ Edge Function instance 30 ครั้ง/นาที/IP ไว้ แต่โควตารวมยังขึ้นกับแพ็กเกจ API ของคุณ หากเปิดให้ผู้ชมจำนวนมากต้องเพิ่ม rate limit ส่วนกลางภายหลัง
 
 ## ทดสอบบนเครื่อง
 

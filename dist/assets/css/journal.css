@@ -3,3 +3,19 @@
 .journal-dashboard [hidden]{display:none!important}.owner-access{margin:24px 0}.owner-access>.journal-actions{margin-top:18px}.owner-access #auth-status{color:var(--lime);line-height:1.8;font-size:14px}.journal-entry .journal-actions{margin-top:12px}.journal-entry .entry-state{color:var(--lime);font-size:12px}.journal-dashboard button:disabled{opacity:.55;cursor:wait}.owner-access input{scroll-margin-top:25px}
 
 .journal-grid:has(>#journal-editor[hidden]){grid-template-columns:1fr}
+
+.interview-desk{margin-top:34px;padding:34px;border:1px solid #ffffff24;background:linear-gradient(145deg,#0b1f36,#102a4d)}
+.interview-heading{display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:end;margin-bottom:26px}
+.interview-heading h2{margin-top:14px}
+.interview-heading>p,.interview-feature p,.interview-sources p,.interview-policy{color:#b8c7d9;line-height:1.85}
+.interview-feature{display:flex;justify-content:space-between;align-items:end;gap:30px;padding:28px;background:#f3f2ec;color:#071522}
+.interview-feature>div{max-width:760px}.interview-feature h3{font-size:clamp(22px,3vw,34px);margin:10px 0}
+.interview-feature p{color:#435064}.interview-feature .button{flex:0 0 auto;color:#fff}
+.interview-label{font:700 11px var(--font-ui);letter-spacing:1.7px;color:#1648ef;text-transform:uppercase}
+.interview-context{padding-top:14px;border-top:1px solid #07152224}
+.interview-sources{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.interview-sources article{padding:22px;border:1px solid #ffffff24;background:#0a1a2c}
+.interview-sources span{color:var(--lime);font:700 12px var(--font-ui)}
+.interview-sources h3{margin:10px 0 5px;font-size:20px}.interview-sources a{display:inline-block;margin-top:8px;border-bottom:1px solid #ffffff50;font-size:13px}
+.interview-policy{margin:18px 0 0;font-size:12px}
+@media(max-width:760px){.interview-desk{padding:22px}.interview-heading{grid-template-columns:1fr}.interview-feature{align-items:start;flex-direction:column}.interview-sources{grid-template-columns:1fr}}

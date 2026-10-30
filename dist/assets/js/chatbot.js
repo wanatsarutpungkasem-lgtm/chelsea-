@@ -196,7 +196,8 @@
     footballAbort = controller;
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      const url = new URL('/.netlify/functions/football', location.origin);
+      const endpoint = config.footballEndpoint || '/.netlify/functions/football';
+      const url = new URL(endpoint, location.origin);
       Object.entries(parameters).forEach(([key, value]) => url.searchParams.set(key, value));
       const response = await fetch(url, { credentials: 'omit', signal: controller.signal, referrerPolicy: 'no-referrer' });
       let payload;

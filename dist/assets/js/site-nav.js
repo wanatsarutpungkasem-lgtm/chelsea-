@@ -3,6 +3,12 @@
   const links = document.querySelector('#site-links');
   const dropdown = document.querySelector('.dropdown-toggle');
   const panel = document.querySelector('#more-links');
+  if(panel && !panel.querySelector('[href="football.html"]')) {
+    const footballLink=document.createElement('a');
+    footballLink.href='football.html';
+    footballLink.textContent='ศูนย์ฟุตบอล';
+    panel.insertBefore(footballLink,panel.firstChild);
+  }
   const closeDropdown = () => { if(panel) panel.hidden = true; dropdown?.setAttribute('aria-expanded','false'); };
   function closeMenu(){links?.classList.remove('is-open'); menu?.setAttribute('aria-expanded','false');closeDropdown();}
   menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));links?.classList.toggle('is-open',open);if(!open)closeDropdown();});
