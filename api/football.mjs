@@ -7,7 +7,9 @@ const handler = createFootballHandler({
 });
 
 export default async function football(req, res) {
-  const request = new Request(new URL(req.url, 'https://ohm-fanchelsea.vercel.app'), { method: req.method });
+  const url = new URL(req.url, 'https://ohm-fanchelsea.vercel.app');
+  url.searchParams.set('league', '39');
+  const request = new Request(url, { method: req.method });
   const response = await handler(request);
   res.statusCode = response.status;
   response.headers.forEach((value, name) => {

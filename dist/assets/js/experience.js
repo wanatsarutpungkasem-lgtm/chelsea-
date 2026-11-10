@@ -51,11 +51,18 @@
  }
  function queueScroll(){if(!scrollFrame&&!document.hidden)scrollFrame=requestAnimationFrame(updateScroll);}
  addEventListener('scroll',queueScroll,{passive:true});addEventListener('resize',queueScroll,{passive:true});addEventListener('pageshow',queueScroll);updateScroll();
+ document.addEventListener('pointerdown',event=>{
+  if(off())return;
+  const button=event.target.closest('button,.button,.textlink,.page-pager a');
+  if(!button||button.disabled||!button.animate)return;
+  button.animate([{scale:'1'},{scale:'.93'},{scale:'1.055'},{scale:'.985'},{scale:'1'}],{duration:480,easing:'cubic-bezier(.22,.7,.3,1)'});
+ });
  document.addEventListener('click',event=>{
   if(off())return;
   const target=event.target.closest('button,.button,.textlink,.page-pager a');
   if(!target||target.disabled||target.closest('.photo-dialog')||!target.animate)return;
   target.classList.add('has-interaction');
+  if(event.detail===0)target.animate([{scale:'1'},{scale:'.94'},{scale:'1.05'},{scale:'1'}],{duration:420,easing:'ease-out'});
   const r=target.getBoundingClientRect();
   const pulse=document.createElement('span');pulse.className='interaction-ripple';pulse.setAttribute('aria-hidden','true');
   pulse.style.setProperty('--ripple-x',`${event.detail?event.clientX-r.left:r.width/2}px`);

@@ -115,7 +115,8 @@ export function createFootballHandler({
           fetched = {rows: [...new Map([...today.rows, ...tomorrow.rows].map(row => [row.fixture.id, row])).values()], fetchedAt: [today.fetchedAt, tomorrow.fetchedAt].sort()[0]};
         } else fetched = await provider('/fixtures', parameters);
         const normalizedTeams = teams.map(normalize);
-        let fixtures = fetched.rows.map(mapFixture).filter(f => normalizedTeams.every(t => normalize(`${f.home.name} ${f.away.name}`).includes(t)));
+        const premierOnly = p.get('league') === '39';
+        let fixtures = fetched.rows.filter(row => !premierOnly || row.league?.id === 39).map(mapFixture).filter(f => normalizedTeams.every(t => normalize(`${f.home.name} ${f.away.name}`).includes(t)));
         if (scheduled) fixtures = fixtures.filter(f => ['NS', 'TBD'].includes(f.status));
         if (finished) fixtures = fixtures.filter(f => f.finished);
         fixtures.sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);

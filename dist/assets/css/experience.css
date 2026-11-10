@@ -126,6 +126,29 @@ html.motion-off::view-transition-old(root),html.motion-off::view-transition-new(
 }
 
 .has-interaction{position:relative;isolation:isolate;overflow:hidden}
+.match-home{display:grid;grid-template-columns:1fr 1fr;gap:42px;align-items:center;padding-top:45px;padding-bottom:65px}.match-home h2{font-size:clamp(28px,4vw,42px);line-height:1.3;margin:18px 0}.match-home p{color:#b6c6dd;line-height:1.8}.match-home-card{padding:30px;border:1px solid #719bff70;border-radius:22px;background:radial-gradient(ellipse at top right,#254abb60,transparent 75%),#102039;box-shadow:0 15px 45px #0003}.match-home-badge{font-size:11px;letter-spacing:2px;color:#d5f182}.match-home-card h3{font-size:25px;margin:22px 0 8px}.match-home-card .button{margin:15px 0 20px}.match-home-card small{display:block;color:#aabbd2;line-height:1.8;font-size:12px}@media(max-width:700px){.match-home{grid-template-columns:1fr;gap:16px;padding-top:22px}.match-home-card{padding:23px}}
+
+/* Visible affordances: controls look actionable before hover, including touch. */
+:is(button,a.button,.textlink,.page-pager a){-webkit-tap-highlight-color:#719dff44;touch-action:manipulation}
+:is(button,a.button,.textlink,.page-pager a):not(:disabled){cursor:pointer}
+:is(.button,.textlink,.journal-secondary,.menu-toggle,.dropdown-toggle,.chat-quick-replies button,.page-pager a){border-radius:12px;transition:background-color .18s,border-color .18s,box-shadow .18s,translate .18s}
+.button{border:1px solid #91acff80;background:linear-gradient(135deg,#3264ff,#2043d8);box-shadow:0 4px 0 #102570,0 8px 22px #1546f52b;font-weight:700}
+.textlink{display:inline-flex;align-items:center;gap:12px;padding:14px 18px;border:1px solid #9bb8f173;background:#152d46;color:#fff;box-shadow:0 3px 0 #020b16}
+.menu-toggle,.dropdown-toggle{border:1px solid #91acff66;background:#132b45;color:#fff;min-height:44px;padding:10px 14px}
+.navlinks>a{border-radius:8px;padding:10px 12px;border:1px solid #91acff35;background:#ffffff06}
+.navlinks>a[aria-current=page]{border-color:#d5f18299;background:#d5f18212}
+.page-pager a{padding:16px 20px;border:1px solid #91acff55;background:#11263b}
+.chat-quick-replies button{min-height:44px;border:1px solid #4168e0;box-shadow:0 2px 0 #294aa52b;font-weight:600}
+:is(button,a,input,select,textarea):focus-visible{outline:3px solid #d5f182;outline-offset:4px}
+:is(button,a.button):disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+@media(hover:hover){
+ :is(.button,.textlink,.journal-secondary,.menu-toggle,.dropdown-toggle,.page-pager a):hover{translate:0 -2px;border-color:#b8d0ff;box-shadow:0 6px 24px #3264ff55}
+ .navlinks>a:hover{background:#3264ff26;border-color:#91acff99;color:#fff}
+ .chat-quick-replies button:hover{background:#dbe6ff;border-color:#214cea;box-shadow:0 4px 12px #214cea25}
+}
+:is(.button,.textlink,.journal-secondary,.menu-toggle,.dropdown-toggle,.page-pager a,.chat-quick-replies button):active{translate:0 2px;box-shadow:0 1px 3px #0003}
+@media(prefers-reduced-motion:reduce){:is(button,a){translate:none!important}}
+html.motion-off :is(button,a){translate:none!important}
 
 /* Keep the motion preference with navigation rather than covering page content. */
 .dropdown-panel .motion-toggle{position:relative;inset:auto;display:block;width:100%;max-width:none;margin-top:6px;text-align:left;border-radius:6px;font-size:12px;box-shadow:none;padding:11px 14px}
