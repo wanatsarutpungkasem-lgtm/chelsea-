@@ -117,3 +117,37 @@ try{const config=window.OM_CHAT_CONFIG;if(!window.supabase||!config)throw Error(
  client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){clearPrivate();setTimeout(()=>refreshAuth(),0);}else if(event==='TOKEN_REFRESHED'){if(owner)setTimeout(()=>requireOwner().catch(error=>{tell(readableError(error));}),0);}else if(['SIGNED_IN','INITIAL_SESSION','USER_UPDATED'].includes(event))setTimeout(()=>refreshAuth(),0);});
 }catch{authTell('ระบบคลาวด์ยังเชื่อมต่อไม่ได้ สามารถเปิดสมุดเดิมในเครื่องและสำรองไฟล์ไว้ได้');}
 render();if(client)refreshAuth();
+
+// OAuth uses the same session and server-side owner checks as email sign-in.
+{
+ const login=document.querySelector('#owner-login');
+ const social=document.createElement('div');social.className='oauth-options';
+ social.setAttribute('role','group');social.setAttribute('aria-label','เข้าสู่ระบบด้วยบัญชีโซเชียล');
+ const icons={
+  google:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.4a4.6 4.6 0 0 1-2 3v2.7h3.3c1.9-1.8 2.9-4.4 2.9-7.7Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.5l-3.3-2.7c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.2H3v2.8A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.6a6 6 0 0 1 0-3.2V7.6H3a10 10 0 0 0 0 8.8Z"/><path fill="#EA4335" d="M12 6.2c1.5 0 2.8.5 3.9 1.5L18.8 5A10 10 0 0 0 3 7.6l3.4 2.8C7.2 8 9.4 6.2 12 6.2Z"/></svg>',
+  github:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .8a11.2 11.2 0 0 0-3.54 21.82c.56.1.76-.24.76-.54v-2.1c-3.12.68-3.78-1.33-3.78-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.71 2.62 1.22 3.26.93.1-.73.39-1.22.71-1.5-2.49-.28-5.1-1.25-5.1-5.54 0-1.22.43-2.22 1.15-3-.12-.29-.5-1.42.11-2.96 0 0 .94-.3 3.08 1.15a10.7 10.7 0 0 1 5.6 0c2.14-1.45 3.08-1.15 3.08-1.15.61 1.54.23 2.67.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.62 5.25-5.12 5.53.4.35.76 1.03.76 2.08v3.11c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg>',
+  facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.85v-8.38H7.05V12h3.05V9.36c0-3.01 1.79-4.68 4.53-4.68 1.31 0 2.68.23 2.68.23v2.95H15.8c-1.49 0-1.95.93-1.95 1.88V12h3.32l-.53 3.47h-2.79v8.38A12 12 0 0 0 24 12Z"/></svg>'
+ };
+ for(const [provider,label] of [['google','Google'],['github','GitHub'],['facebook','Facebook']]){
+  const button=document.createElement('button');button.type='button';button.className='oauth-button oauth-'+provider;
+  button.innerHTML=icons[provider]+'<span>เข้าสู่ระบบด้วย '+label+'</span>';
+  button.addEventListener('click',async()=>{
+   if(!client){authTell('ยังเชื่อมต่อระบบเข้าสู่ระบบไม่ได้ กรุณาลองใหม่');return;}
+   const buttons=[...social.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);button.setAttribute('aria-busy','true');
+   authTell('กำลังเชื่อมต่อ '+label+'…');
+   try{
+    const cfg=window.OM_CHAT_CONFIG;
+    const response=await fetch(cfg.supabaseUrl+'/auth/v1/settings',{headers:{apikey:cfg.publishableKey},signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw Error('ตรวจบริการเข้าสู่ระบบไม่ได้ กรุณาลองใหม่');
+    const settings=await response.json();
+    if(settings.external?.[provider]!==true)throw Error('การเข้าสู่ระบบด้วย '+label+' ยังไม่เปิดใช้งาน กรุณาใช้อีเมลก่อน');
+    const {error}=await client.auth.signInWithOAuth({provider,options:{redirectTo:new URL('dashboard.html',location.href).href}});
+    if(error)throw error;
+   }catch(error){authTell(error.message||'เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่');}
+   finally{buttons.forEach(b=>b.disabled=false);button.removeAttribute('aria-busy');}
+  });social.append(button);
+ }
+ const hint=document.createElement('p');hint.className='journal-footnote';hint.textContent='ใช้บัญชีที่มีอีเมลตรงกับบัญชีเจ้าของที่อนุมัติไว้ การเข้าสู่ระบบไม่ได้ให้สิทธิ์แก้ไขบันทึกโดยอัตโนมัติ';
+ const divider=document.createElement('p');divider.className='oauth-divider';divider.textContent='หรือเข้าสู่ระบบด้วยอีเมล';
+ login.prepend(social,hint,divider);
+}
