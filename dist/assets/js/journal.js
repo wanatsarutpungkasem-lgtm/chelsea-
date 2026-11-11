@@ -130,7 +130,8 @@ render();if(client)refreshAuth();
  };
  for(const [provider,label] of [['google','Google'],['github','GitHub'],['facebook','Facebook']]){
   const button=document.createElement('button');button.type='button';button.className='oauth-button oauth-'+provider;
-  button.innerHTML=icons[provider]+'<span>เข้าสู่ระบบด้วย '+label+'</span>';
+  button.setAttribute('aria-label','เข้าสู่ระบบด้วย '+label);
+  button.innerHTML=icons[provider]+'<span>'+label+'</span>';
   button.addEventListener('click',async()=>{
    if(!client){authTell('ยังเชื่อมต่อระบบเข้าสู่ระบบไม่ได้ กรุณาลองใหม่');return;}
    const buttons=[...social.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);button.setAttribute('aria-busy','true');
@@ -148,8 +149,8 @@ render();if(client)refreshAuth();
   });social.append(button);
  }
  const hint=document.createElement('p');hint.className='journal-footnote';hint.textContent='ใช้บัญชีที่มีอีเมลตรงกับบัญชีเจ้าของที่อนุมัติไว้ การเข้าสู่ระบบไม่ได้ให้สิทธิ์แก้ไขบันทึกโดยอัตโนมัติ';
- const divider=document.createElement('p');divider.className='oauth-divider';divider.textContent='หรือเข้าสู่ระบบด้วยอีเมล';
- login.prepend(social,hint,divider);
+ const divider=document.createElement('p');divider.className='oauth-divider';divider.textContent='หรือใช้บัญชีโซเชียล';
+ login.append(divider,social,hint);
 }
 
 // Keep authentication behind an explicit membership action, outside the journal.
