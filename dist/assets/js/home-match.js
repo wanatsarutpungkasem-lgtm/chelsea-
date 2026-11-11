@@ -4,7 +4,7 @@
  if(!button||!output)return;
  function show(title,detail){const h=document.createElement('h3'),p=document.createElement('p');h.textContent=title;p.textContent=detail;output.replaceChildren(h,p);}
  button.addEventListener('click',async()=>{
-  button.disabled=true;button.textContent='กำลังตรวจโปรแกรม…';
+  button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='กำลังตรวจโปรแกรม…';
   show('กำลังค้นหาโปรแกรมเชลซี','ข้อมูลจาก API-Football');
   try{
    const params=new URLSearchParams({mode:'fixtures',upcoming:'1',teams:JSON.stringify(['Chelsea']),league:'39'});
@@ -17,6 +17,6 @@
    show(fixture.home.name+' vs '+fixture.away.name,date+' น. · '+(fixture.status==='TBD'?'รอยืนยันเวลา':'ยังไม่เริ่มแข่งขัน'));
    if(data.fetchedAt){const stamp=document.createElement('small');stamp.textContent='ข้อมูลจาก API-Football · ตรวจเมื่อ '+new Intl.DateTimeFormat('th-TH',{timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(data.fetchedAt));output.append(stamp);}
   }catch(error){show('ยังตรวจโปรแกรมไม่ได้',error.name==='TimeoutError'?'การเชื่อมต่อใช้เวลานาน กรุณาลองใหม่':error.message);}
-  finally{button.disabled=false;button.textContent='ตรวจโปรแกรมอีกครั้ง ↗';}
+  finally{button.disabled=false;button.removeAttribute('aria-busy');button.textContent='ตรวจโปรแกรมอีกครั้ง ↗';}
  });
 })();
