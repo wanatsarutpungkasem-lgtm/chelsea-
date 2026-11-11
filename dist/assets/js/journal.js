@@ -151,3 +151,30 @@ render();if(client)refreshAuth();
  const divider=document.createElement('p');divider.className='oauth-divider';divider.textContent='หรือเข้าสู่ระบบด้วยอีเมล';
  login.prepend(social,hint,divider);
 }
+
+// Keep authentication behind an explicit membership action, outside the journal.
+{
+ const access=$('#owner-access');
+ const dialog=document.createElement('dialog');dialog.className='membership-dialog';dialog.id='membership-dialog';dialog.setAttribute('aria-labelledby','owner-title');
+ const close=node('button','×','membership-close');close.type='button';close.setAttribute('aria-label','ปิดหน้าต่างสมาชิก');
+ const tabs=document.createElement('div');tabs.className='membership-tabs';tabs.setAttribute('role','group');tabs.setAttribute('aria-label','เลือกเข้าสู่ระบบหรือสมัครสมาชิก');
+ for(const [key,label] of [['signin','เข้าสู่ระบบ'],['signup','สมัครสมาชิก']]){
+  const button=node('button',label);button.type='button';button.dataset.authMode=key;button.setAttribute('aria-pressed',String(key==='signin'));
+  button.addEventListener('click',()=>{if(busy)return;chooseAuthMode(key);tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));});tabs.append(button);
+ }
+ access.querySelector('.eyebrow').textContent='BLUE AT HEART · MEMBERS';
+ $('#owner-title').textContent='ยินดีต้อนรับสู่บ้านสีน้ำเงิน';
+ dialog.append(close,tabs,access);document.body.append(dialog);
+ close.addEventListener('click',()=>dialog.close());
+ dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
+ const open=()=>{if(!dialog.open)dialog.showModal();};
+ const action=$('#write-entry');
+ action.addEventListener('click',event=>{if(action.getAttribute('href')==='#owner-access'){event.preventDefault();open();}});
+ const membership=node('button','เข้าสู่ระบบ / สมัครสมาชิก','button membership-launch');membership.type='button';membership.setAttribute('aria-haspopup','dialog');membership.setAttribute('aria-controls',dialog.id);membership.addEventListener('click',open);
+ const intro=document.querySelector('.dashboard-heading')||action.parentElement;intro.append(membership);
+ const syncLabel=()=>{if(!owner&&mode==='public')action.textContent='เข้าสู่ระบบ / สมัครสมาชิก ↗';membership.hidden=!sessionUser;if(sessionUser)membership.textContent='บัญชีของฉัน';else membership.textContent='เข้าสู่ระบบ / สมัครสมาชิก';};
+ new MutationObserver(syncLabel).observe(action,{attributes:true,attributeFilter:['href']});syncLabel();
+ // One clear entry point; the original journal action remains the primary link.
+ syncLabel();
+ if(location.hash==='#owner-access')open();
+}
