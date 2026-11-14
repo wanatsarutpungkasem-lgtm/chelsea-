@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises';
-import {fetchClubSchedule,selectNext} from '../lib/chelsea-schedule.mjs';
+import {fetchClubSchedule,selectNext,selectWeek} from '../lib/chelsea-schedule.mjs';
 export function createChelseaNextHandler({fetcher=fetch,now=()=>new Date(),readSnapshot=async()=>JSON.parse(await readFile(new URL('../dist/data/chelsea-next.json',import.meta.url),'utf8'))}={}){
  let cached=null,pending=null,retryAt=0;
  return async function handler(request){
@@ -17,7 +17,8 @@ export function createChelseaNextHandler({fetcher=fetch,now=()=>new Date(),readS
    delivery='snapshot';
    try{value=cached||await readSnapshot();}catch{return Response.json({error:{message:'ยังโหลดโปรแกรมนัดถัดไปไม่ได้ กรุณาลองใหม่ภายหลัง'}},{status:503});}
   }
-  try{return Response.json(selectNext(value,now(),delivery),{headers:{'Cache-Control':delivery==='club'?'public, max-age=60, s-maxage=3600, stale-while-revalidate=3600':'public, max-age=60, s-maxage=300','X-Content-Type-Options':'nosniff'}});}
+  const select=new URL(request.url).searchParams.get('scope')==='week'?selectWeek:selectNext;
+  try{return Response.json(select(value,now(),delivery),{headers:{'Cache-Control':delivery==='club'?'public, max-age=60, s-maxage=3600, stale-while-revalidate=3600':'public, max-age=60, s-maxage=300','X-Content-Type-Options':'nosniff'}});}
   catch{return Response.json({error:{message:'ข้อมูลโปรแกรมแข่งยังไม่พร้อม กรุณาลองใหม่'}},{status:503});}
  };
 }
