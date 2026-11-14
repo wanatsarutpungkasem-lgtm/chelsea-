@@ -15,5 +15,6 @@ export default async function football(req, res) {
   response.headers.forEach((value, name) => {
     if (!name.toLowerCase().startsWith('netlify-')) res.setHeader(name, value);
   });
+  res.setHeader('Vercel-CDN-Cache-Control',response.ok?'public, s-maxage=60, stale-while-revalidate=120':'no-store');
   res.end(await response.text());
 }

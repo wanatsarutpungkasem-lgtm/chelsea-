@@ -28,7 +28,7 @@
     <div class="chat-privacy" id="om-chat-privacy"><span aria-hidden="true">◈</span> ไม่บันทึกประวัติ · ข้อความหายเมื่อรีเฟรชหรือเปลี่ยนหน้า</div>
     <div class="chat-tools"><span>สกอร์จากผู้ให้บริการ · คาดการณ์ก่อนเริ่มแข่ง</span><button type="button" class="chat-reset">เริ่มใหม่</button></div>
     <div class="chat-messages" role="log" aria-label="บทสนทนากับผู้ช่วย" aria-live="polite" aria-relevant="additions"></div>
-    <p class="chat-prompt-caption">ลองถาม “เชลซี พบ อาร์เซนอล 2026-11-01” หรือ “ผลบอลเมื่อวาน”</p>
+    <p class="chat-prompt-caption">ลองถาม “เชลซีสัปดาห์นี้เตะวันไหน” หรือ “ผลบอลเมื่อวาน”</p>
     <form class="chat-compose"><label class="sr-only" for="om-chat-input">ข้อความถึงผู้ช่วย</label><input id="om-chat-input" name="message" type="text" placeholder="พิมพ์คำถามของคุณ…" autocomplete="off" maxlength="500" required><button type="submit" aria-label="ส่งข้อความ">↗</button></form>
     <p class="chat-footer">ไม่เก็บประวัติแชท · คำค้นฟุตบอลใช้ดึงข้อมูลผ่านผู้ให้บริการ</p>`;
   document.body.append(dialog);
@@ -81,7 +81,7 @@
   const quickTopics = [
     ['about-om', 'เกี่ยวกับตัวตนของโอห์ม'], ['favorite-players', 'นักเตะที่ชอบ'],
     ['favorite-coaches', 'โค้ชที่ชอบ'], ['stamford-dream', 'ความฝันของโอห์ม'],
-    ['contact-om', 'ช่องทางติดต่อ'], ['football-today', '⚽ บอลวันนี้'], ['football-upcoming', 'คู่ยังไม่เริ่ม'], ['football-finished', 'คู่จบแล้ว'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
+    ['contact-om', 'ช่องทางติดต่อ'], ['football-chelsea-week', 'เชลซี 7 วัน'], ['football-today', '⚽ บอลวันนี้'], ['football-upcoming', 'คู่ยังไม่เริ่ม'], ['football-finished', 'คู่จบแล้ว'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
   ];
   function showQuickReplies(autoScroll = true) {
     log.querySelector('.chat-quick-replies')?.remove();
@@ -106,7 +106,7 @@
     send.disabled = false;
     log.replaceChildren();
     input.value = '';
-    message('bot', `สวัสดีครับ 💙 ยินดีต้อนรับสู่ ${config.brand}\nผมคือ Bot Chelsea ผู้ช่วยเรื่องโอห์มและฟุตบอล เลือกดูโปรแกรม ผลการแข่งขัน หรือค่าคาดการณ์ก่อนแข่งได้ครับ ข้อมูลฟุตบอลจะพร้อมเมื่อเชื่อมผู้ให้บริการแล้ว`);
+    message('bot', `สวัสดีครับ 💙 ยินดีต้อนรับสู่ ${config.brand}\nผมคือ Bot Chelsea ผู้ช่วยเรื่องโอห์มและฟุตบอล เลือกดูโปรแกรม ผลการแข่งขัน หรือค่าคาดการณ์ก่อนแข่งได้ครับ โปรแกรมเชลซี 7 วันใช้ตารางสโมสร ส่วนสกอร์และไลน์อัปใช้ข้อมูลจาก API-Football`);
     showQuickReplies();
   }
   function matchTopic(text) {
@@ -149,6 +149,10 @@
     const faqTopic = selectedTopic || matchTopic(text);
     let footballResult = null;
     try {
+      const weekly=await import('./chelsea-week.mjs');
+      if(selectedTopic==='football-chelsea-week'||weekly.weeklyQuestion(text)){
+        const data=await weekly.loadChelseaWeek();if(epoch!==currentEpoch)return;typing.remove();message('bot',weekly.weekSummary(data));
+      } else {
       const request = explicitRequest || await footballRequest(text, selectedTopic, faqTopic);
       if (request) {
         typing.textContent = 'กำลังดึงข้อมูลฟุตบอล…';
@@ -160,6 +164,7 @@
         if (epoch !== currentEpoch) return;
         typing.remove();
         message('bot', getAnswer(faqTopic));
+      }
       }
     } catch (error) {
       if (epoch !== currentEpoch) return;
@@ -196,7 +201,7 @@
     footballAbort = controller;
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      const url = new URL('/api/football', location.origin);
+      const url = new URL(config.footballEndpoint||'/api/football', location.origin);
       Object.entries(parameters).forEach(([key, value]) => url.searchParams.set(key, value));
       const response = await fetch(url, { credentials: 'omit', signal: controller.signal, referrerPolicy: 'no-referrer' });
       let payload;
