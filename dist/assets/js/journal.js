@@ -102,7 +102,7 @@ function chooseAuthMode(next){
  document.querySelectorAll('[data-auth-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.authMode===next)));
  authTell(signup?'สมัครด้วยอีเมลและรหัสผ่านอย่างน้อย 8 ตัวอักษร แล้วเปิดลิงก์ยืนยันในอีเมล':resetting?'ใส่อีเมลที่ใช้สมัคร เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่':updating?'ตั้งรหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร':'ยินดีต้อนรับกลับมา เข้าสู่ระบบเพื่อเปิดพื้นที่ของคุณ');
 }
-$('#owner-signup').addEventListener('click',()=>{if(!busy)chooseAuthMode(authMode==='signup'?'signin':'signup');});
+$('#owner-signup').addEventListener('click',()=>{if(!busy)chooseAuthMode(authMode==='signin'?'signup':'signin');});
 $('#owner-login').addEventListener('submit',event=>{event.preventDefault();run(async()=>{
  if(!client)throw Error('ระบบล็อกอินยังเชื่อมต่อไม่ได้');
  const login=event.target,{email,password,confirmPassword}=Object.fromEntries(new FormData(login));
