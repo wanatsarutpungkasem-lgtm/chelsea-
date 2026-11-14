@@ -63,10 +63,3 @@ export function parseFootballQuestion(text, now = new Date()) {
     scheduled: !finished && (pending || upcoming), live, prediction, finished
   };
 }
-
-export function isChelseaNextQuestion(text,plan=parseFootballQuestion(text)){
- const intent=/นัดหน้า|นัดถัดไป|next(?:\s+match)?|(?:เตะ|แข่ง)(?:วันไหน|เมื่อไหร่)|เจอใคร|พบใคร/iu.test(text);
- const noOtherTeam=plan.teams.length<=1&&plan.teams.every(t=>t==='chelsea');
- const noDate=!/\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}|วันนี้|คืนนี้|พรุ่งนี้|เมื่อวาน|เมื่อคืน|\b(?:today|tonight|tomorrow|yesterday)\b/iu.test(text);
- return intent&&noOtherTeam&&noDate&&!plan.live&&!plan.finished&&!plan.prediction&&!plan.lineup;
-}

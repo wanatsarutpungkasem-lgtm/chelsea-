@@ -2,23 +2,6 @@
   "name": "ai-ohm-chelsea-website",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "test": "node --test tests/*.test.mjs",
-    "build:energy": "node scripts/build-energy.mjs"
-  },
-  "engines": {
-    "node": ">=22"
-  },
-  "dependencies": {
-    "@react-three/fiber": "9.8.2",
-    "@shadergradient/react": "2.4.20",
-    "camera-controls": "3.1.2",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "three": "0.180.0",
-    "three-stdlib": "2.36.1"
-  },
-  "devDependencies": {
-    "esbuild": "0.28.2"
-  }
+  "scripts": { "test": "node --test tests/*.test.mjs" },
+  "engines": { "node": ">=22" }
 }

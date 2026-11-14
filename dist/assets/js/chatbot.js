@@ -81,7 +81,7 @@
   const quickTopics = [
     ['about-om', 'เกี่ยวกับตัวตนของโอห์ม'], ['favorite-players', 'นักเตะที่ชอบ'],
     ['favorite-coaches', 'โค้ชที่ชอบ'], ['stamford-dream', 'ความฝันของโอห์ม'],
-    ['contact-om', 'ช่องทางติดต่อ'], ['football-chelsea-next', 'เชลซีนัดหน้า'], ['football-today', '⚽ บอลวันนี้'], ['football-upcoming', 'คู่ยังไม่เริ่ม'], ['football-finished', 'คู่จบแล้ว'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
+    ['contact-om', 'ช่องทางติดต่อ'], ['football-today', '⚽ บอลวันนี้'], ['football-upcoming', 'คู่ยังไม่เริ่ม'], ['football-finished', 'คู่จบแล้ว'], ['football-live', '● กำลังแข่ง'], ['football-yesterday', 'ผลบอลเมื่อวาน'], ['football-prediction', 'โอกาสชนะ %']
   ];
   function showQuickReplies(autoScroll = true) {
     log.querySelector('.chat-quick-replies')?.remove();
@@ -106,7 +106,7 @@
     send.disabled = false;
     log.replaceChildren();
     input.value = '';
-    message('bot', `สวัสดีครับ 💙 ยินดีต้อนรับสู่ ${config.brand}\nผมคือ Bot Chelsea ผู้ช่วยเรื่องโอห์มและฟุตบอล เลือกดูโปรแกรม ผลการแข่งขัน หรือค่าคาดการณ์ก่อนแข่งได้ครับ กด “เชลซีนัดหน้า” เพื่อดูโปรแกรมพรีเมียร์ลีกได้เลยครับ ส่วนสกอร์และค่าคาดการณ์ขึ้นอยู่กับบริการข้อมูลฟุตบอล`);
+    message('bot', `สวัสดีครับ 💙 ยินดีต้อนรับสู่ ${config.brand}\nผมคือ Bot Chelsea ผู้ช่วยเรื่องโอห์มและฟุตบอล เลือกดูโปรแกรม ผลการแข่งขัน หรือค่าคาดการณ์ก่อนแข่งได้ครับ ข้อมูลฟุตบอลจะพร้อมเมื่อเชื่อมผู้ให้บริการแล้ว`);
     showQuickReplies();
   }
   function matchTopic(text) {
@@ -178,9 +178,7 @@
     if (faqTopic && !selectedTopic?.startsWith('football-') && !strong && !/line[ -]?up|ไลน์|รายชื่อ|ตัวจริง/iu.test(text)) return null;
     const mod = await footballModule;
     const presets = { 'football-today': 'บอลวันนี้', 'football-upcoming': 'ฟุตบอลกำลังจะเตะ', 'football-finished': 'ฟุตบอลแข่งจบแล้ว', 'football-live': 'บอลสด', 'football-yesterday': 'ผลบอลเมื่อวาน', 'football-prediction': 'คาดการณ์บอลวันนี้' };
-    if(selectedTopic==='football-chelsea-next')return {mode:'chelsea-next'};
     const plan = mod.parseFootballQuestion(presets[selectedTopic] || text);
-    if(mod.isChelseaNextQuestion(text,plan))return {mode:'chelsea-next'};
     if (!plan.sport) return null;
     if (!plan.valid) throw new Error('วันที่ไม่ถูกต้องครับ ลองระบุ YYYY-MM-DD เช่น 2026-11-01');
     if (plan.lineup && !plan.teams.length) {
@@ -194,7 +192,6 @@
     return { mode: 'fixtures', date: plan.date, upcoming: plan.upcoming ? '1' : '0', scheduled: plan.scheduled ? '1' : '0', teams: JSON.stringify(plan.teams), live: plan.live ? '1' : '0', finished: plan.finished ? '1' : '0', page: '1' };
   }
   async function fetchFootball(parameters) {
-    if(parameters.mode==='chelsea-next')return (await import('./chelsea-next.mjs')).loadChelseaNext();
     const controller = new AbortController();
     footballAbort = controller;
     const timer = setTimeout(() => controller.abort(), 30000);
@@ -250,18 +247,6 @@
   }
   function renderFootball(data, request) {
     const block = element('div', 'football-results');
-    if(data.kind==='chelsea-next'){
-      lastFixtureId=null;
-      const f=data.fixture;
-      block.append(element('h3','football-summary',f?f.home+' vs '+f.away:'ยังไม่มีนัดพรีเมียร์ลีกถัดไปที่ยืนยันได้'));
-      if(f){
-        const time=f.timeConfirmed===false?new Intl.DateTimeFormat('th-TH',{dateStyle:'full',timeZone:'Europe/London'}).format(new Date(f.date))+' · รอยืนยันเวลา':new Intl.DateTimeFormat('th-TH',{dateStyle:'full',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(f.date))+' น. · เวลาไทย';
-        block.append(element('p','football-kickoff',time),element('p','football-note',f.competition+' · '+f.venue));
-      }
-      const stamp=new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(data.fetchedAt));
-      block.append(element('p','football-note',(data.stale?'ข้อมูลสำรองเกิน 7 วัน ควรตรวจยืนยัน · ':data.delivery==='snapshot'?'ตารางสำรองล่าสุด · ':'')+'อัปเดต '+stamp+' · โปรแกรมอาจเปลี่ยนแปลง'));
-      const link=element('a','football-more','แหล่งข้อมูล: Chelsea FC ↗');link.href='https://www.chelseafc.com/en/matches/mens-fixtures-and-results';link.target='_blank';link.rel='noopener noreferrer';block.append(link);log.append(block);return block;
-    }
     if (data.kind === 'fixtures') {
       lastFixtureId = data.total === 1 ? data.fixtures[0]?.id : null;
       if (!data.total) {
