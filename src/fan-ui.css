@@ -1,0 +1,53 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "../dist/*.html";
+@source "../dist/assets/js/journal.js";
+
+/* Compiled Tailwind, without Preflight: preserve the restored site's layout. */
+.button { @apply text-white font-semibold; color:#fff; background:linear-gradient(135deg,#315fff,#1942d4); border:1px solid #7297ff; box-shadow:0 4px 0 #102f91,0 10px 28px #1746de24; }
+.button:hover { background:linear-gradient(135deg,#4672ff,#2450e7); }
+.button:focus-visible,.journal-secondary:focus-visible,.auth-text-button:focus-visible { outline:3px solid #d3ef89;outline-offset:4px; }
+.button:disabled { cursor:wait;opacity:.65; }
+.button,.journal-secondary,.oauth-button,.chat-quick-replies button { @apply min-h-11; transition:translate .2s ease,box-shadow .2s ease,background .2s ease; }
+@media(hover:hover) { .button:hover,.journal-secondary:hover { translate:0 -2px; } }
+.button:active,.journal-secondary:active,.oauth-button:active { translate:0 2px; }
+.journal-secondary { @apply rounded-xl; border-color:#607fa6;background:#10253d; }
+.journal-secondary:hover { background:#193959;border-color:#91afff; }
+.membership-dialog { @apply rounded-3xl; width:min(540px,calc(100vw - 28px));max-height:calc(100dvh - 36px);padding:24px;scrollbar-width:thin;scrollbar-color:#5275ac transparent;background:linear-gradient(145deg,#10243d,#091827);border-color:#557cba;box-shadow:0 32px 100px #0009,0 1px 0 #fff1 inset; }
+.membership-dialog::backdrop { background:#020812bd;backdrop-filter:blur(10px); }
+.membership-dialog .membership-close { width:40px;height:40px;min-height:40px;font-size:23px;background:#142e4c; }
+.membership-dialog .membership-tabs { margin:12px 0 24px;@apply rounded-xl; }
+.membership-dialog .owner-access .eyebrow { letter-spacing:.2em;color:#b5cced;font-size:10px; }
+.membership-dialog .owner-access h2 { margin:12px 0;line-height:1.45;font-size:26px;letter-spacing:-.025em; }
+.membership-dialog #auth-status { margin:0 0 22px;min-height:42px;font-size:14px;line-height:1.75;color:#b8d0ee; }
+.membership-dialog .journal-field-row { gap:0; }
+.membership-dialog .owner-access label { font-size:13px;margin-bottom:16px;color:#d7e4f5; }
+.membership-dialog .owner-access input { min-height:48px;@apply rounded-xl; background:#081623;color:#f5f8ff;border-color:#48658a;padding:12px 14px;font-size:16px; }
+.membership-dialog .owner-access input:focus-visible { border-color:#93b4ff;outline:2px solid #93b4ff;outline-offset:2px;box-shadow:0 0 0 5px #315fff20; }
+.membership-dialog .journal-actions { @apply grid grid-cols-1 gap-3; }
+.membership-dialog .journal-actions .button { width:100%;padding:12px 18px;font-size:15px;min-height:48px;color:#fff; }
+.membership-dialog #owner-signup { border:0;background:transparent;box-shadow:none;color:#9fbfff;padding:8px;font-size:13px; }
+.membership-dialog .journal-footnote { font-size:11px;line-height:1.7;color:#91a9c8;margin:16px 0; }
+.auth-helper-actions { @apply flex flex-wrap justify-between gap-2; margin:8px 0 16px; }
+.auth-text-button { @apply min-h-11; color:#b8cff8;font:inherit;font-size:12px;border:0;background:transparent;text-decoration:underline;text-underline-offset:4px;cursor:pointer; }
+.auth-text-button:disabled { opacity:.45;cursor:wait; }
+.membership-dialog .oauth-options { @apply grid grid-cols-3 gap-2; }
+.membership-dialog .oauth-button { @apply rounded-xl; min-height:48px;flex-wrap:wrap;background:#f4f7fc;color:#12243c;box-shadow:0 2px 0 #adbfd7; }
+.membership-dialog .oauth-button small { width:100%;font-size:10px;font-weight:400; }
+.membership-dialog .oauth-button:disabled { cursor:not-allowed;opacity:.5;box-shadow:none; }
+.membership-dialog .oauth-divider { font-size:12px;color:#b7cbe5;margin:20px 0 14px; }
+.home-match-card { border-color:#496fae;background:radial-gradient(ellipse at 0 0,#21458488,transparent 70%),#0b1c33;box-shadow:0 28px 70px #0002; }
+.home-match-card .button { margin-top:20px; }
+.week-range { @apply text-sm; letter-spacing:.035em;color:#a6c7ff!important; }
+.week-fixture { margin:18px 0;@apply rounded-2xl; padding:22px;background:#08172ba8;border:1px solid #6f95d14d; }
+.week-fixture h3 { font-size:clamp(21px,3vw,32px);margin:10px 0;line-height:1.4; }
+.week-fixture p { font-size:16px;line-height:1.7; }
+.week-badge { @apply inline-block rounded-full px-3 py-1 text-xs font-semibold; color:#d4ed98;background:#c7ed7c12;border:1px solid #c7ed7c40;letter-spacing:.08em; }
+.week-source { display:block;color:#aac8ff;font-size:12px;text-underline-offset:4px;margin-top:12px; }
+.chat-quick-replies { gap:8px; }
+.chat-quick-replies button { border-radius:14px;padding:9px 12px;font-size:13px;box-shadow:0 2px 0 #1939bd16; }
+.chat-message-body { white-space:pre-wrap; }
+@media(max-width:480px) { .membership-dialog { padding:20px; } .membership-dialog .owner-access h2 { font-size:23px; } .membership-dialog .oauth-button { font-size:11px; } .week-fixture { padding:16px; } }
+@media(prefers-reduced-motion:reduce) { .button,.journal-secondary,.oauth-button,.chat-quick-replies button { transition:none;translate:none!important; } }
+
+.chat-bubble { white-space:pre-wrap; }
