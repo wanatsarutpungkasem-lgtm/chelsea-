@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "build:css": "tailwindcss -i styles/fan-ui.css -o dist/assets/css/fan-ui.css --minify",
+    "build:css": "tailwindcss -i src/fan-ui.css -o dist/assets/css/fan-ui.css --minify",
     "build": "npm run build:css && npm test"
   },
   "engines": {
