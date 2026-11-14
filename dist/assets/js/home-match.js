@@ -1,22 +1,17 @@
-(() => {
- 'use strict';
- const button=document.querySelector('#home-match-load'), output=document.querySelector('#home-match-result');
- if(!button||!output)return;
- function show(title,detail){const h=document.createElement('h3'),p=document.createElement('p');h.textContent=title;p.textContent=detail;output.replaceChildren(h,p);}
- button.addEventListener('click',async()=>{
-  button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='กำลังตรวจโปรแกรม…';
-  show('กำลังค้นหาโปรแกรมเชลซี','ข้อมูลจาก API-Football');
-  try{
-   const params=new URLSearchParams({mode:'fixtures',upcoming:'1',teams:JSON.stringify(['Chelsea']),league:'39'});
-   const response=await fetch('/api/football?'+params,{credentials:'omit',signal:AbortSignal.timeout(20000)});
-   let data;try{data=await response.json();}catch{throw new Error('บริการฟุตบอลยังไม่พร้อม กรุณาลองอีกครั้งภายหลัง');}
-   if(!response.ok)throw new Error(data.error?.message||'โหลดโปรแกรมไม่สำเร็จ');
-   const fixture=data.fixtures?.find(f=>f.league?.name==='Premier League'&&[f.home?.name,f.away?.name].includes('Chelsea'));
-   if(!fixture){show('ยังไม่พบคู่เชลซีในช่วงนี้','ค้นเฉพาะวันนี้และพรุ่งนี้ในพรีเมียร์ลีก นัดถัดไปอาจอยู่นอกช่วงที่ค้นได้');return;}
-   const date=new Intl.DateTimeFormat('th-TH',{dateStyle:'full',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(fixture.date));
-   show(fixture.home.name+' vs '+fixture.away.name,date+' น. · '+(fixture.status==='TBD'?'รอยืนยันเวลา':'ยังไม่เริ่มแข่งขัน'));
-   if(data.fetchedAt){const stamp=document.createElement('small');stamp.textContent='ข้อมูลจาก API-Football · ตรวจเมื่อ '+new Intl.DateTimeFormat('th-TH',{timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(data.fetchedAt));output.append(stamp);}
-  }catch(error){show('ยังตรวจโปรแกรมไม่ได้',error.name==='TimeoutError'?'การเชื่อมต่อใช้เวลานาน กรุณาลองใหม่':error.message);}
-  finally{button.disabled=false;button.removeAttribute('aria-busy');button.textContent='ตรวจโปรแกรมอีกครั้ง ↗';}
- });
-})();
+import {loadChelseaWeek,kickoff} from './chelsea-week.mjs';
+const button=document.querySelector('#home-match-load'),output=document.querySelector('#home-match-result');
+const el=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text;if(cls)n.className=cls;return n;};
+button?.addEventListener('click',async()=>{
+ button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='กำลังตรวจโปรแกรม…';output.setAttribute('aria-busy','true');
+ output.replaceChildren(el('p','กำลังตรวจตารางเชลซีจากสโมสร…'));
+ try{
+  const data=await loadChelseaWeek();output.replaceChildren(el('p',`${data.from} — ${data.through} · เวลาไทย`,'week-range'));
+  if(!data.fixtures.length){output.append(el('h3','ยังไม่มีเกมในช่วงนี้'),el('p','ไม่พบเกมพรีเมียร์ลีกของเชลซีในช่วงที่ค้นจากตารางที่ได้รับ'));
+   if(data.nextFixture)output.append(el('p',`นัดถัดไปนอกช่วงนี้: ${data.nextFixture.home} พบ ${data.nextFixture.away} · ${kickoff(data.nextFixture)}`));
+  }
+  for(const f of data.fixtures){const card=el('article','','week-fixture');card.append(el('span','PREMIER LEAGUE','week-badge'),el('h3',`${f.home} พบ ${f.away}`),el('p',kickoff(f)));if(f.venue)card.append(el('small',f.venue));output.append(card);}
+  output.append(el('small',`${data.delivery==='snapshot'?'ตารางสำรอง':'Chelsea FC'} · ตรวจข้อมูล ${new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(data.fetchedAt))}${data.stale?' · เกิน 7 วัน กรุณาตรวจยืนยัน':''}`));
+  const source=el('a','ตรวจตารางจากสโมสร ↗','week-source');source.href='https://www.chelseafc.com/en/matches/mens-fixtures-and-results';source.target='_blank';source.rel='noopener noreferrer';output.append(source);
+ }catch(error){output.replaceChildren(el('h3','ยังตรวจโปรแกรมไม่ได้'),el('p',error.message));}
+ finally{button.disabled=false;button.removeAttribute('aria-busy');output.removeAttribute('aria-busy');button.textContent='ตรวจโปรแกรม 7 วันอีกครั้ง ↗';}
+});

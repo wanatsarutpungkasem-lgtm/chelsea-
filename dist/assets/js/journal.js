@@ -1,6 +1,10 @@
+import {ownerAccessResult} from './auth-access.mjs';
+import {createConfirmationResender} from './auth-confirmation.mjs';
 import {JOURNAL_KEY,validateEntry,parseBackup} from './journal-model.mjs';
 import {createJournalStore,pendingImports,publicationLabel} from './journal-cloud.mjs';
 const $=s=>document.querySelector(s),form=$('#journal-form'),status=$('#journal-status'),list=$('#journal-entries');
+let recoveryFlow=new URLSearchParams(location.hash.slice(1)).get('type')==='recovery';
+let confirmationSender;
 let entries=[],publications=[],local=[],healthy=true,owner=null,sessionUser=null,mode='public',epoch=0,authRun=0,busy=false,authMode='signin',loading=false,loadFailed=false,client,store;
 const tell=text=>{status.textContent=text;};
 const authTell=text=>{$('#auth-status').textContent=text;};
@@ -9,7 +13,8 @@ const readableError=error=>{
  const message=error?.message||'';
  if(error?.code==='23505')return 'มีบันทึกรหัสเดียวกันแล้ว กรุณากดโหลดข้อมูลใหม่แล้วนำเข้าอีกครั้ง ข้อมูลทั้งชุดยังไม่ถูกนำเข้า';
  if(/Invalid login credentials/i.test(message))return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หากยังไม่เคยสร้างบัญชีเว็บไซต์ ให้กดสร้างบัญชีครั้งแรก';
- if(/Email not confirmed/i.test(message))return 'กรุณายืนยันอีเมลจากลิงก์ที่ได้รับก่อนเข้าสู่ระบบ';
+ if(/Email not confirmed/i.test(message))return 'ยังไม่ได้ยืนยันอีเมล กดส่งอีเมลยืนยันอีกครั้ง แล้วเปิดลิงก์จากกล่องจดหมายครับ';
+ if(/expired|otp_expired|invalid.*token/i.test(message))return 'ลิงก์หมดอายุหรือใช้แล้ว กรุณาขอลิงก์ใหม่';
  if(/rate.limit|too many|security purposes/i.test(message))return 'ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
  if(/not the approved|confirmed email|permission denied|row.level|42501/i.test(message))return 'บัญชีนี้ยังไม่มีสิทธิ์เจ้าของ กรุณาใช้อีเมลเจ้าของที่ยืนยันแล้ว';
  if(/fetch|network/i.test(message))return 'เชื่อมต่อไม่ได้ กรุณาตรวจอินเทอร์เน็ต ข้อความในแบบฟอร์มยังอยู่';
@@ -20,7 +25,7 @@ function reset(){form.reset();form.elements.id.value='';$('#editor-title').textC
 function persistLocal(next){if(!healthy)throw Error('อ่านบันทึกเดิมในเครื่องไม่ได้ จึงหยุดการเขียนทับไว้');if(next.length>500)throw Error('เก็บบันทึกในเครื่องได้สูงสุด 500 เรื่อง');try{localStorage.setItem(JOURNAL_KEY,JSON.stringify({version:1,entries:next}));}catch{throw Error('พื้นที่ในเครื่องเต็มหรือถูกปิด กรุณาส่งออกไฟล์สำรอง');}local=next;entries=local;}
 function controls(){
  const editable=mode==='local'||(mode==='cloud'&&owner);
- $('#journal-editor').hidden=!editable;$('#journal-backup').hidden=!editable;$('#owner-controls').hidden=!sessionUser;$('#owner-login').hidden=!!sessionUser;$('#sync-local').hidden=!owner;$('#cloud-mode').hidden=!owner;
+ $('#journal-editor').hidden=!editable;$('#journal-backup').hidden=!editable;$('#owner-controls').hidden=!sessionUser;$('#owner-login').hidden=!!sessionUser&&!recoveryFlow;$('#sync-local').hidden=!owner;$('#cloud-mode').hidden=!owner;
  $('#write-entry').textContent=editable?'เขียนบันทึกใหม่ ↗':'พื้นที่เจ้าของ ↗';$('#write-entry').href=editable?'#journal-editor':'#owner-access';
  $('#save-journal').textContent=mode==='cloud'?'บันทึกฉบับร่างบนคลาวด์':'บันทึกในเบราว์เซอร์นี้';
  $('#journal-mode').textContent=mode==='cloud'?'สมุดบันทึกบนคลาวด์ · เฉพาะเจ้าของ':mode==='local'?'สมุดเดิมในเบราว์เซอร์นี้':'บันทึกที่เผยแพร่โดยโอห์ม';
@@ -72,8 +77,10 @@ async function refreshAuth(){
  clearPrivate(false);
  if(error||!data.user){authTell('เข้าสู่ระบบเพื่อเขียนฉบับร่างและเผยแพร่บันทึกของโอห์ม');await reload('public');return;}
  sessionUser=data.user;const claim=await client.rpc('claim_chat_owner');if(request!==authRun)return;
- if(claim.error||claim.data!==true){authTell('เข้าสู่ระบบแล้ว แต่บัญชีนี้ไม่มีสิทธิ์เจ้าของ');await reload('public');return;}
- owner=data.user;authTell('เข้าสู่ระบบเจ้าของแล้ว · ฉบับร่างอ่านได้เฉพาะโอม');await reload('cloud');
+ const access=ownerAccessResult(claim);
+ if(access!=='owner'){authTell(access==='unavailable'?'เข้าสู่ระบบแล้ว แต่ยังตรวจสิทธิ์เจ้าของไม่ได้ กรุณาลองใหม่':'เข้าสู่ระบบสมาชิกแล้ว · สิทธิ์เขียนบันทึกสงวนให้เจ้าของ');await reload('public');}
+ else{owner=data.user;authTell('เข้าสู่ระบบเจ้าของแล้ว · ฉบับร่างอ่านได้เฉพาะโอห์ม');await reload('cloud');}
+ if(!recoveryFlow){document.querySelector('#membership-dialog')?.close();if(location.hash==='#owner-access')history.replaceState(null,'',location.pathname+location.search+'#dashboard');}
 }
 form.addEventListener('submit',event=>{event.preventDefault();run(async()=>{
  const value=Object.fromEntries(new FormData(form)),previous=entries.find(e=>e.id===value.id),now=new Date().toISOString();const entry=validateEntry({...value,id:previous?.id||crypto.randomUUID(),createdAt:previous?.createdAt||now,updatedAt:now});
@@ -82,17 +89,33 @@ form.addEventListener('submit',event=>{event.preventDefault();run(async()=>{
  else throw Error('กรุณาเข้าสู่ระบบเจ้าของก่อนเขียนบันทึก');
  });});
 function chooseAuthMode(next){
- authMode=next;const login=$('#owner-login');login.elements.password.value='';login.elements.confirmPassword.value='';
- $('#confirm-password-field').hidden=next!=='signup';login.elements.confirmPassword.required=next==='signup';
- login.elements.password.autocomplete=next==='signup'?'new-password':'current-password';login.elements.password.minLength=next==='signup'?8:6;
- $('#auth-submit').textContent=next==='signup'?'สร้างบัญชีและส่งอีเมลยืนยัน':'เข้าสู่ระบบ';
- $('#owner-signup').textContent=next==='signup'?'มีบัญชีเว็บไซต์แล้ว → เข้าสู่ระบบ':'ยังไม่มีบัญชี → สร้างบัญชีเว็บครั้งแรก';
- authTell(next==='signup'?'ขั้นที่ 1: ตั้งรหัสผ่านเว็บไซต์อย่างน้อย 8 ตัวอักษร · ขั้นที่ 2: ยืนยันอีเมล · ขั้นที่ 3: กลับมาเข้าสู่ระบบ':'ใช้อีเมลและรหัสผ่านที่สร้างสำหรับเว็บไซต์นี้ หากยังไม่เคยสมัคร ให้เลือกสร้างบัญชีครั้งแรก');
+ authMode=next;const login=$('#owner-login'),signup=next==='signup',resetting=next==='reset',updating=next==='update';
+ login.elements.password.value='';login.elements.confirmPassword.value='';
+ login.elements.email.closest('label').hidden=updating;login.elements.email.required=!updating;
+ login.elements.password.closest('label').hidden=resetting;login.elements.password.required=!resetting;
+ $('#confirm-password-field').hidden=!(signup||updating);login.elements.confirmPassword.required=signup||updating;
+ login.elements.password.autocomplete=signup||updating?'new-password':'current-password';login.elements.password.minLength=signup||updating?8:6;
+ $('#auth-submit').textContent=signup?'สร้างบัญชี':resetting?'ส่งลิงก์กู้รหัสผ่าน':updating?'บันทึกรหัสผ่านใหม่':'เข้าสู่ระบบ';
+ $('#owner-signup').textContent=signup||resetting?'มีบัญชีแล้ว → เข้าสู่ระบบ':'สร้างบัญชีใหม่';$('#owner-signup').hidden=updating;
+ $('#forgot-password')?.toggleAttribute('hidden',next!=='signin');$('#resend-confirmation')?.toggleAttribute('hidden',next!=='signin');
+ login.querySelector('.oauth-options')?.toggleAttribute('hidden',resetting||updating);login.querySelector('.oauth-divider')?.toggleAttribute('hidden',resetting||updating);
+ document.querySelectorAll('[data-auth-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.authMode===next)));
+ authTell(signup?'สมัครด้วยอีเมลและรหัสผ่านอย่างน้อย 8 ตัวอักษร แล้วเปิดลิงก์ยืนยันในอีเมล':resetting?'ใส่อีเมลที่ใช้สมัคร เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่':updating?'ตั้งรหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร':'ยินดีต้อนรับกลับมา เข้าสู่ระบบเพื่อเปิดพื้นที่ของคุณ');
 }
 $('#owner-signup').addEventListener('click',()=>{if(!busy)chooseAuthMode(authMode==='signup'?'signin':'signup');});
 $('#owner-login').addEventListener('submit',event=>{event.preventDefault();run(async()=>{
  if(!client)throw Error('ระบบล็อกอินยังเชื่อมต่อไม่ได้');
  const login=event.target,{email,password,confirmPassword}=Object.fromEntries(new FormData(login));
+ if(authMode==='reset'){
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))throw Error('กรอกอีเมลให้ถูกต้องก่อนครับ');
+  const result=await client.auth.resetPasswordForEmail(email.trim(),{redirectTo:new URL('dashboard.html',location.href).href});if(result.error)throw result.error;
+  chooseAuthMode('signin');authTell('หากอีเมลนี้มีบัญชี จะได้รับลิงก์กู้รหัสผ่าน กรุณาตรวจกล่องจดหมายและสแปม');return;
+ }
+ if(authMode==='update'){
+  if(password.length<8||password!==confirmPassword)throw Error('รหัสผ่านใหม่ต้องตรงกันและยาวอย่างน้อย 8 ตัวอักษร');
+  const result=await client.auth.updateUser({password});login.elements.password.value='';login.elements.confirmPassword.value='';if(result.error)throw result.error;
+  recoveryFlow=false;chooseAuthMode('signin');await refreshAuth();tell('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');return;
+ }
  if(authMode==='signup'){
   if(password!==confirmPassword)throw Error('รหัสผ่านใหม่ทั้งสองช่องต้องตรงกัน');
   authTell('กำลังสร้างบัญชีเว็บไซต์…');
@@ -106,7 +129,7 @@ $('#owner-login').addEventListener('submit',event=>{event.preventDefault();run(a
 $('#owner-signout').addEventListener('click',()=>run(async()=>{clearPrivate();const result=await client.auth.signOut();if(result.error)throw result.error;await reload('public');authTell('ออกจากระบบแล้ว แสดงเฉพาะบันทึกสาธารณะ');}));
 $('#refresh-journal').addEventListener('click',()=>{if(busy)return;if([...form.querySelectorAll('input:not([type=hidden]),textarea')].some(e=>e.value)&&!confirm('โหลดข้อมูลใหม่และล้างข้อความที่ยังไม่บันทึกในแบบฟอร์มไหมครับ?'))return;reset();tell('');reload(mode);});
 $('#cloud-mode').addEventListener('click',()=>{if(busy)return;reset();reload('cloud');});
-$('#local-mode').addEventListener('click',()=>{if(busy)return;reset();reload('local');});$('#public-mode').addEventListener('click',()=>{if(busy)return;reset();reload('public');});
+$('#local-mode').addEventListener('click',()=>{if(busy)return;reset();reload('local');$('#membership-dialog')?.close();location.hash='journal-editor';});$('#public-mode').addEventListener('click',()=>{if(busy)return;reset();reload('public');$('#membership-dialog')?.close();location.hash='dashboard';});
 $('#sync-local').addEventListener('click',()=>run(async()=>{const user=await requireOwner();if(!healthy)throw Error('อ่านบันทึกในเครื่องไม่ได้ กรุณานำเข้าจากไฟล์สำรอง');const drafts=await store.drafts();const pending=pendingImports(local,drafts);if(drafts.length+pending.length>500)throw Error('นำเข้ารวมกันได้สูงสุด 500 เรื่อง');await store.importDrafts(pending,user.id);await reload('cloud');tell('นำขึ้นคลาวด์เป็นร่าง '+pending.length+' เรื่อง ข้อมูลเดิมในเครื่องยังอยู่ และยังไม่ได้เผยแพร่');}));
 $('#cancel-edit').addEventListener('click',()=>{reset();tell('ล้างเฉพาะแบบฟอร์มแล้ว บันทึกเดิมยังอยู่');});
 $('#start-memory').addEventListener('click',()=>{if([...form.querySelectorAll('input:not([type=hidden]),textarea')].some(e=>e.value)&&!confirm('แทนข้อความที่ยังไม่บันทึกด้วยข้อมูลนัดชิงสโมสรโลกไหมครับ?'))return;reset();form.elements.title.value='วันที่เชลซีเป็นแชมป์โลก';form.elements.matchDate.value='2025-07-13';form.elements.opponent.value='Paris Saint-Germain';form.elements.score.value='เชลซี 3–0 PSG';form.elements.body.focus();tell('เติมข้อเท็จจริงการแข่งขันแล้ว ความรู้สึกของโอมรอให้เล่าด้วยตัวเองครับ');});
@@ -114,7 +137,8 @@ $('#journal-search').addEventListener('input',render);$('#mood-filter').addEvent
 $('#export-journal').addEventListener('click',()=>{if(mode==='public')return;if(mode==='local'&&!healthy){tell('อ่านบันทึกเดิมไม่ได้ จึงยังสร้างไฟล์สำรองที่สมบูรณ์ไม่ได้');return;}const blob=new Blob([JSON.stringify({version:1,entries:entries.map(validateEntry)},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download='ohm-blue-journal-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);tell('สร้างไฟล์สำรองฉบับร่างแล้ว ไฟล์นี้อาจมีเรื่องราวส่วนตัว เก็บไว้กับโอมครับ');});
 $('#import-journal').addEventListener('change',event=>{const file=event.target.files[0];if(!file)return;run(async()=>{if(file.size>2_000_000)throw Error('ไฟล์ใหญ่เกิน 2 MB');const imported=parseBackup(await file.text()),added=pendingImports(imported,entries);if(entries.length+added.length>500)throw Error('รวมบันทึกได้สูงสุด 500 เรื่อง');if(mode==='local')persistLocal([...local,...added]);else if(mode==='cloud'){const user=await requireOwner();await store.importDrafts(added,user.id);await reload('cloud');}else throw Error('กรุณาเข้าสู่ระบบเจ้าของก่อนนำเข้า');tell('นำเข้าเป็นร่าง '+added.length+' เรื่อง โดยไม่ทับรหัสเดิมและยังไม่เผยแพร่');});event.target.value='';});
 try{const config=window.OM_CHAT_CONFIG;if(!window.supabase||!config)throw Error();client=window.supabase.createClient(config.supabaseUrl,config.publishableKey,{auth:{storageKey:'ohm.journal.auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});store=createJournalStore(client);
- client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){clearPrivate();setTimeout(()=>refreshAuth(),0);}else if(event==='TOKEN_REFRESHED'){if(owner)setTimeout(()=>requireOwner().catch(error=>{tell(readableError(error));}),0);}else if(['SIGNED_IN','INITIAL_SESSION','USER_UPDATED'].includes(event))setTimeout(()=>refreshAuth(),0);});
+ confirmationSender=createConfirmationResender({send:args=>client.auth.resend(args)});
+ client.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY'){recoveryFlow=true;setTimeout(()=>{chooseAuthMode('update');$('#owner-login').hidden=false;const d=$('#membership-dialog');if(d&&!d.open)d.showModal();},0);}else if(event==='SIGNED_OUT'){clearPrivate();setTimeout(()=>refreshAuth(),0);}else if(event==='TOKEN_REFRESHED'){if(owner)setTimeout(()=>requireOwner().catch(error=>{tell(readableError(error));}),0);}else if(['SIGNED_IN','INITIAL_SESSION','USER_UPDATED'].includes(event))setTimeout(()=>refreshAuth(),0);});
 }catch{authTell('ระบบคลาวด์ยังเชื่อมต่อไม่ได้ สามารถเปิดสมุดเดิมในเครื่องและสำรองไฟล์ไว้ได้');}
 render();if(client)refreshAuth();
 
@@ -131,7 +155,7 @@ render();if(client)refreshAuth();
  for(const [provider,label] of [['google','Google'],['github','GitHub'],['facebook','Facebook']]){
   const button=document.createElement('button');button.type='button';button.className='oauth-button oauth-'+provider;
   button.setAttribute('aria-label','เข้าสู่ระบบด้วย '+label);
-  button.innerHTML=icons[provider]+'<span>'+label+'</span>';
+  button.innerHTML=icons[provider]+'<span>'+label+'</span>';button.disabled=true;button.dataset.provider=provider;button.title='กำลังตรวจบริการ';
   button.addEventListener('click',async()=>{
    if(!client){authTell('ยังเชื่อมต่อระบบเข้าสู่ระบบไม่ได้ กรุณาลองใหม่');return;}
    const buttons=[...social.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);button.setAttribute('aria-busy','true');
@@ -145,12 +169,22 @@ render();if(client)refreshAuth();
     const {error}=await client.auth.signInWithOAuth({provider,options:{redirectTo:new URL('dashboard.html',location.href).href}});
     if(error)throw error;
    }catch(error){authTell(error.message||'เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่');}
-   finally{buttons.forEach(b=>b.disabled=false);button.removeAttribute('aria-busy');}
+   finally{buttons.forEach(b=>b.disabled=b.dataset.available!=='true');button.removeAttribute('aria-busy');}
   });social.append(button);
  }
  const hint=document.createElement('p');hint.className='journal-footnote';hint.textContent='ใช้บัญชีที่มีอีเมลตรงกับบัญชีเจ้าของที่อนุมัติไว้ การเข้าสู่ระบบไม่ได้ให้สิทธิ์แก้ไขบันทึกโดยอัตโนมัติ';
  const divider=document.createElement('p');divider.className='oauth-divider';divider.textContent='หรือใช้บัญชีโซเชียล';
  login.append(divider,social,hint);
+ const helpers=node('div',undefined,'auth-helper-actions');
+ const forgot=node('button','ลืมรหัสผ่าน?','auth-text-button');forgot.id='forgot-password';forgot.type='button';forgot.addEventListener('click',()=>{if(!busy)chooseAuthMode('reset');});
+ const resend=node('button','ส่งอีเมลยืนยันอีกครั้ง','auth-text-button');resend.id='resend-confirmation';resend.type='button';
+ resend.addEventListener('click',async()=>{if(busy||!confirmationSender)return;resend.disabled=true;try{await confirmationSender.resend(login.elements.email.value,new URL('dashboard.html',location.href).href);authTell('ส่งคำขออีเมลยืนยันแล้ว กรุณาตรวจกล่องจดหมายและสแปม');}catch(e){authTell(readableError(e));}finally{setTimeout(()=>resend.disabled=false,60000);}});
+ helpers.append(forgot,resend);login.querySelector('.journal-actions').after(helpers);
+ const cfg=window.OM_CHAT_CONFIG;
+ fetch(cfg.supabaseUrl+'/auth/v1/settings',{headers:{apikey:cfg.publishableKey},signal:AbortSignal.timeout(10000)}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(settings=>{
+  for(const button of social.querySelectorAll('button')){const enabled=settings.external?.[button.dataset.provider]===true;button.dataset.available=String(enabled);button.disabled=!enabled;button.title=enabled?'เข้าสู่ระบบด้วย '+button.dataset.provider:'ผู้ให้บริการนี้ยังไม่เปิด';if(!enabled){const state=node('small','ยังไม่เปิด');button.append(state);}}
+  hint.textContent='ล็อกอินได้เฉพาะบริการที่เปิดอยู่ · บัญชีสมาชิกอ่านโพสต์ได้ สิทธิ์เขียนเป็นของเจ้าของเท่านั้น';
+ }).catch(()=>{hint.textContent='ยังตรวจบริการโซเชียลไม่ได้ กรุณาใช้อีเมลหรือลองรีเฟรชอีกครั้ง';});
 }
 
 // Keep authentication behind an explicit membership action, outside the journal.
@@ -168,7 +202,7 @@ render();if(client)refreshAuth();
  dialog.append(close,tabs,access);document.body.append(dialog);
  close.addEventListener('click',()=>dialog.close());
  dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
- const open=()=>{if(!dialog.open)dialog.showModal();};
+ const open=()=>{if(location.hash==='#owner-access')history.replaceState(null,'',location.pathname+location.search);if(!dialog.open)dialog.showModal();dialog.scrollTop=0;};
  const action=$('#write-entry');
  action.addEventListener('click',event=>{if(action.getAttribute('href')==='#owner-access'){event.preventDefault();open();}});
  const membership=node('button','เข้าสู่ระบบ / สมัครสมาชิก','button membership-launch');membership.type='button';membership.setAttribute('aria-haspopup','dialog');membership.setAttribute('aria-controls',dialog.id);membership.addEventListener('click',open);
@@ -177,5 +211,9 @@ render();if(client)refreshAuth();
  new MutationObserver(syncLabel).observe(action,{attributes:true,attributeFilter:['href']});syncLabel();
  // One clear entry point; the original journal action remains the primary link.
  syncLabel();
+ chooseAuthMode('signin');
+ const authError=new URLSearchParams(location.hash.slice(1)).get('error_description')||new URLSearchParams(location.search).get('error_description');
+ if(authError){authTell(readableError({message:authError}));history.replaceState(null,'',location.pathname);open();}
  if(location.hash==='#owner-access')open();
+ if(recoveryFlow){chooseAuthMode('update');$('#owner-login').hidden=false;open();}
 }
