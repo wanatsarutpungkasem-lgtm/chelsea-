@@ -4,7 +4,6 @@ window.OM_CHAT_CONFIG = Object.freeze({
   "brand": "อ้ายโอห์ม แฟนเชลซี",
   "supabaseUrl": "https://unjtfvxnxdgqlupzkgoc.supabase.co",
   "publishableKey": "sb_publishable_o-uSDaIzx5TiVccC4dpPfQ_kfe6_9gY",
-  "footballEndpoint": "https://unjtfvxnxdgqlupzkgoc.supabase.co/functions/v1/football",
   "fallback": [
     {
       "slug": "about-om",

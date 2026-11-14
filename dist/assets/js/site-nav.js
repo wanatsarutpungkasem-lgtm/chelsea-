@@ -3,18 +3,22 @@
   const links = document.querySelector('#site-links');
   const dropdown = document.querySelector('.dropdown-toggle');
   const panel = document.querySelector('#more-links');
-  if(panel && !panel.querySelector('[href="football.html"]')) {
-    const footballLink=document.createElement('a');
-    footballLink.href='football.html';
-    footballLink.textContent='ศูนย์ฟุตบอล';
-    panel.insertBefore(footballLink,panel.firstChild);
-  }
   const closeDropdown = () => { if(panel) panel.hidden = true; dropdown?.setAttribute('aria-expanded','false'); };
   function closeMenu(){links?.classList.remove('is-open'); menu?.setAttribute('aria-expanded','false');closeDropdown();}
   menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));links?.classList.toggle('is-open',open);if(!open)closeDropdown();});
   dropdown?.addEventListener('click',()=>{const open=dropdown.getAttribute('aria-expanded')!=='true';dropdown.setAttribute('aria-expanded',String(open));if(panel)panel.hidden=!open;});
   document.addEventListener('click',e=>{if(!e.target.closest('.nav-dropdown'))closeDropdown();if(!e.target.closest('.nav') && links?.classList.contains('is-open'))closeMenu();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(dropdown?.getAttribute('aria-expanded')==='true'){closeDropdown();dropdown.focus();}else if(links?.classList.contains('is-open')){closeMenu();menu?.focus();}}});
+  // Same-page destinations must be visible after mobile menus or dialogs close.
+  document.addEventListener('click',e=>{
+    const link=e.target.closest('a[href]');if(!link||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||link.target==='_blank'||link.hasAttribute('download'))return;
+    const url=new URL(link.href,location.href);
+    if(url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search||!url.hash)return;
+    let id;try{id=decodeURIComponent(url.hash.slice(1));}catch{return;}
+    const target=document.getElementById(id);if(!target||target.hidden||target.closest('[hidden]'))return;
+    closeMenu();const modal=link.closest('dialog');if(modal&&!modal.contains(target))modal.close();
+    requestAnimationFrame(()=>{target.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches||document.documentElement.classList.contains('motion-off')?'instant':'smooth'});if(!target.matches('input,button,select,textarea,a[href]'))target.tabIndex=-1;target.focus({preventScroll:true});});
+  });
   // Keep previously shared section links working after splitting the homepage.
   const legacy={about:'about.html',favorites:'favorites.html',gallery:'gallery.html',dream:'dream.html'};
   if(/\/(?:index\.html)?$/.test(location.pathname)&&legacy[location.hash.slice(1)]) location.replace(legacy[location.hash.slice(1)]);

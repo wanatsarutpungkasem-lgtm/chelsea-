@@ -1,0 +1,1 @@
+const host=document.getElementById('blue-energy-root');if(host){const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){observer.disconnect();import('./main.jsx').catch(()=>{host.querySelector('.energy-fallback span').textContent='เปิดฉากไม่ได้ในขณะนี้ · อ่านเรื่องราวส่วนอื่นได้ตามปกติ';});}},{rootMargin:'200px'});observer.observe(host);}

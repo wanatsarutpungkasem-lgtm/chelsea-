@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import {chelseaNextHandler} from '../api/chelsea-next.mjs';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -24,12 +25,13 @@ const football = testData ? createFootballHandler({
     return Response.json({ errors: [], response: rows, paging: { current: 1, total: 1 } });
   }
 }) : createFootballHandler({ getKey: () => process.env.FOOTBALL_API_KEY });
-const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript', '.mjs': 'application/javascript', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript', '.mjs': 'application/javascript', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const port = Number(process.env.PORT || 4173);
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
-    if (url.pathname === '/.netlify/functions/football') {
+    if(url.pathname==='/api/chelsea-next'){const result=await chelseaNextHandler(new Request(url,{method:req.method}));res.writeHead(result.status,Object.fromEntries(result.headers));res.end(Buffer.from(await result.arrayBuffer()));return;}
+    if (['/api/football', '/.netlify/functions/football'].includes(url.pathname)) {
       const result = await football(new Request(url, { method: req.method }));
       res.writeHead(result.status, Object.fromEntries(result.headers)); res.end(Buffer.from(await result.arrayBuffer())); return;
     }

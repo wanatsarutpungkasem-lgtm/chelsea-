@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "source": "Chelsea FC · โปรแกรมทีมชาย",
+  "sourceUrl": "https://www.chelseafc.com/en/matches/mens-fixtures-and-results",
+  "fetchedAt": "2026-11-12T17:02:35.295Z",
+  "fixtures": [
+    {
+      "id": "2645298",
+      "home": "Chelsea",
+      "away": "Leeds United",
+      "date": "2026-11-21T15:00:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645313",
+      "home": "Nottingham Forest",
+      "away": "Chelsea",
+      "date": "2026-11-27T20:00:00.000Z",
+      "timeConfirmed": true,
+      "venue": "The City Ground",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645318",
+      "home": "Chelsea",
+      "away": "Crystal Palace",
+      "date": "2026-12-02T19:30:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645328",
+      "home": "Chelsea",
+      "away": "Liverpool",
+      "date": "2026-12-05T12:30:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645343",
+      "home": "Manchester City",
+      "away": "Chelsea",
+      "date": "2026-12-12T17:30:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Etihad Stadium",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645349",
+      "home": "Chelsea",
+      "away": "Aston Villa",
+      "date": "2026-12-21T20:00:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645356",
+      "home": "Coventry City",
+      "away": "Chelsea",
+      "date": "2026-12-27T14:00:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Coventry Building Society Arena",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645371",
+      "home": "Ipswich Town",
+      "away": "Chelsea",
+      "date": "2026-12-30T20:15:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Portman Road",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645379",
+      "home": "Chelsea",
+      "away": "Newcastle United",
+      "date": "2027-01-03T14:00:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645387",
+      "home": "Crystal Palace",
+      "away": "Chelsea",
+      "date": "2027-01-06T19:30:00.000Z",
+      "timeConfirmed": true,
+      "venue": "Selhurst Park",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645398",
+      "home": "Chelsea",
+      "away": "Sunderland",
+      "date": "2027-01-16T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645411",
+      "home": "Leeds United",
+      "away": "Chelsea",
+      "date": "2027-01-23T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Elland Road",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645418",
+      "home": "Chelsea",
+      "away": "Nottingham Forest",
+      "date": "2027-01-30T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645432",
+      "home": "Manchester United",
+      "away": "Chelsea",
+      "date": "2027-02-06T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Old Trafford",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645443",
+      "home": "Newcastle United",
+      "away": "Chelsea",
+      "date": "2027-02-10T20:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "St. James' Park",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645449",
+      "home": "Chelsea",
+      "away": "Ipswich Town",
+      "date": "2027-02-20T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645455",
+      "home": "Aston Villa",
+      "away": "Chelsea",
+      "date": "2027-02-27T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Villa Park",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645469",
+      "home": "Chelsea",
+      "away": "Coventry City",
+      "date": "2027-03-03T20:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645477",
+      "home": "Chelsea",
+      "away": "Arsenal",
+      "date": "2027-03-13T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645490",
+      "home": "Hull City",
+      "away": "Chelsea",
+      "date": "2027-03-20T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "The MKM Stadium",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645497",
+      "home": "Chelsea",
+      "away": "Fulham",
+      "date": "2027-04-10T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645507",
+      "home": "Brighton & Hove Albion",
+      "away": "Chelsea",
+      "date": "2027-04-17T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "American Express Stadium",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645518",
+      "home": "Chelsea",
+      "away": "Manchester City",
+      "date": "2027-04-24T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645532",
+      "home": "Liverpool",
+      "away": "Chelsea",
+      "date": "2027-05-01T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Anfield",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645544",
+      "home": "Tottenham Hotspur",
+      "away": "Chelsea",
+      "date": "2027-05-08T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Tottenham Hotspur Stadium",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645547",
+      "home": "Chelsea",
+      "away": "Everton",
+      "date": "2027-05-15T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645555",
+      "home": "Bournemouth",
+      "away": "Chelsea",
+      "date": "2027-05-23T14:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Vitality Stadium",
+      "competition": "Premier League"
+    },
+    {
+      "id": "2645567",
+      "home": "Chelsea",
+      "away": "Brentford",
+      "date": "2027-05-30T15:00:00.000Z",
+      "timeConfirmed": false,
+      "venue": "Stamford Bridge",
+      "competition": "Premier League"
+    }
+  ]
+}
